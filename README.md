@@ -10,8 +10,6 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 4. The **png_outputs** folder contains the visualizations created by analyzing the simulated and experimental data. 
 
----
-
 ## Simulation_code Files
 *A brief description of each the files within the simulation_code folder.*
 
