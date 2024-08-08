@@ -14,7 +14,7 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 *A brief description of each the files within the simulation_code folder.*
 
-1.  **HPCrun.sh**
+1.  **HPCrun.sh** is the shell script to run the HPCrun.R via slurm 
 
 2.  **HPCrun.R**
 
