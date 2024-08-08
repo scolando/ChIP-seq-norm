@@ -1,0 +1,350 @@
+---
+title: "CutandRun Normalization Methods: PCA and K-means Clustering"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-expand: true
+    number-sections: true
+editor: visual
+knitr: 
+  opts_chunk: 
+    warning: false
+    message: false
+---
+
+## Loading packages and creating dba object
+
+```{r loading required packages}
+library(tidyverse)
+library(DiffBind)
+library(GreyListChIP)
+library(edgeR)
+library(csaw)
+library(MAnorm2)
+library(fuzzyjoin)
+library(NbClust)
+library(factoextra)
+library(broom)
+library(ggrepel)
+```
+
+```{r reading in files}
+# reading in .bam files
+bams <-list.files("cutandrun_data/tryp_aligned_bams/", ".bam")
+bams<-bams[!str_detect(bams, "bam.bai|IgG")] #remove bam.bai, IgG control
+bams<-c(bams[1:5], bams[18:20], bams[6:17]) 
+
+#reading in spike in files
+spikes <- list.files("cutandrun_data/yeast_aligned_bams/",  ".bam")
+spikes<-spikes[str_detect(spikes, "sort")] # take sorted bam files
+spikes<-spikes[!str_detect(spikes, "bam.bai")] #remove bam.bai, and 2 orig 0h
+spikes<-c(spikes[1:2],spikes[4],spikes[3],spikes[5],spikes[15:17],spikes[6:14], spikes[18:20]) #sort nicely
+
+# reading in broadpeak files
+peaks <- list.files("cutandrun_data/MACS_peaks/", ".broadPeak") 
+peaks <- c(peaks[1:5], peaks[7],peaks[9],peaks[11],peaks[6],peaks[8],peaks[10], peaks[12:20]) #sort nicely
+```
+
+```{r constructing samplesheet and dba obj}
+# construct sample sheet with paths to all relevant files
+sample_sheet<-data.frame(
+  SampleID= c('0h_1', '0h_2', '0h_2re','0h_3','0h_3re', paste0(rep(c('0.5h_','1h_','3h_','24h_','76h_'), each=3), rep(1:3,5))),
+  Condition= c(rep('0', 5), rep(c('0.5', '1', '3', '24', '76'), each=3)),
+  Treatment= rep("Bromodomain Inhibition", 20),
+  Replicate= c(1,2,3,4,5,rep(1:3, 5)),
+  bamReads= paste0("cutandrun_data/tryp_aligned_bams/", bams),
+  Spikein= paste0("cutandrun_data/yeast_aligned_bams/", spikes),
+  ControlID= rep("16_IgG_1", 20),
+  bamControl= rep("cutandrun_data/16_IgG_1_CR_diff_comb_140804_tb927_v5.1_m1_v2_sorted.bam", 20),
+  Peaks= paste0("cutandrun_data/MACS_peaks/", peaks),
+  PeakCaller= rep("narrow", 20)
+)
+
+# constructing the dba object used for DiffBind
+res_s<- dba(sampleSheet=sample_sheet, 
+            config=data.frame(AnalysisMethod=DBA_DESEQ2, th=0.05,
+                              DataType=DBA_DATA_GRANGES, RunParallel=TRUE,
+                              minQCth=15, bCorPlot=FALSE, reportInit="DBA",
+                              bUsePval=FALSE, design=TRUE,
+                              doBlacklist=FALSE, doGreylist=TRUE))
+```
+
+```{r creating greylists}
+set.seed(4747)
+
+# get chromosome length information from karyo file
+karyo<-read.table("cutandrun_data/karyo.txt")
+
+#create greylist object
+gl<-new("GreyList", karyoFile="cutandrun_data/karyo.txt")
+#count the reads from the control file
+gl <- countReads(gl,"cutandrun_data/16_IgG_1_CR_diff_comb_140804_tb927_v5.1_m1_v2_sorted.bam") 
+#calculate read count threshold
+gl <- calcThreshold(gl,reps=100,sampleSize=1000,p=0.99,cores=1)
+gl <- makeGreyList(gl,maxGap=10000)
+
+# hide greylisted regions in dba object from further analysis
+res_s<-invisible(suppressMessages(dba.blacklist(res_s, greylist=gl@regions)))
+```
+
+```{r finding consensus peaks}
+# adds consensus peaks: those that overlap in 3 replicates
+# DBA peakset function has a list of consensus parameters, DBA_CONDITION is saying that samples should be grouped based on timepoint which we defined up above when we created the DBA object
+res_consensus <- dba.peakset(res_s, consensus=c(DBA_CONDITION), minOverlap=3)
+#mask other peaksets, focuses only on consensus
+# functions called on DBA only looks at consensus peak sets, so we maintain replicates but within each replicate only peaks that show up in other replicates remain
+res_consensus <- dba(res_consensus, mask=res_consensus$masks$Consensus,
+                             minOverlap=1)
+
+#creates an object containing the consensus peaks, and writes it out as a bed file
+consensus_peaks <- dba.peakset(res_consensus, bRetrieve=TRUE, DataType = 'DBA_DATA_FRAME')
+```
+
+```{r creating res_c object}
+# This code prints a summary of the peak widths in our dataset. We want a summits value that lies within [1/2 * min peak width, 1/2 * 1st quartile peak width]. summits=200 fits the bill! Tries to make sure we're counting a narrow enough window so that the smallest peaks still have some reasonable width to count within
+# we are basically subtracting the start position from end position to get the peak width
+summary(res_s$binding[,3]-res_s$binding[,2])
+
+# initial normalization with  2 different strategies, but we haven't created actual normalized counts yet
+res_c <- dba.count(res_s, score=DBA_SCORE_NORMALIZED, peaks=consensus_peaks, summits=200, bParallel=FALSE)
+res_c<-invisible(suppressMessages(dba.blacklist(res_c, greylist=gl@regions)))
+```
+
+```{r setting up contrasts}
+res_c<-dba.contrast(res_c, contrast=c("Condition", '0.5', '0'))
+res_c<-dba.contrast(res_c, contrast=c("Condition", '1', '0'))
+res_c<-dba.contrast(res_c, contrast=c("Condition", '3', '0'))
+res_c<-dba.contrast(res_c, contrast=c("Condition", '24', '0'))
+res_c<-dba.contrast(res_c, contrast=c("Condition", '76', '0'))
+```
+
+## DiffBind normalization and dba analysis
+
+```{r completing DiffBind normalization and dba RiP}
+res_lib_peaks <- dba.normalize(res_c, normalize = DBA_NORM_LIB, library = DBA_LIBSIZE_PEAKREADS,
+                               spikein = FALSE)
+res_lib_peaks <- dba.analyze(res_lib_peaks)
+
+res_RLE_peaks <- dba.normalize(res_c, normalize = DBA_NORM_RLE, library = DBA_LIBSIZE_PEAKREADS,
+                               spikein = FALSE)
+res_RLE_peaks <- dba.analyze(res_RLE_peaks)
+
+res_TMM_peaks <- dba.normalize(res_c, normalize = DBA_NORM_TMM, library = DBA_LIBSIZE_PEAKREADS,
+                               spikein = FALSE)
+res_TMM_peaks <- dba.analyze(res_TMM_peaks)
+
+res_offsets_peaks <- dba.normalize(res_c, normalize = DBA_NORM_OFFSETS_ADJUST, 
+                                   spikein = FALSE, offsets = TRUE)
+res_offsets_peaks <- dba.analyze(res_offsets_peaks)
+```
+
+```{r completing DiffBind normalization and dba background}
+res_lib_background<-dba.normalize(res_c, normalize=DBA_NORM_LIB, background=TRUE, spikein=FALSE)
+res_lib_background<-dba.analyze(res_lib_background)
+
+res_RLE_background<-dba.normalize(res_c, normalize=DBA_NORM_RLE, background=TRUE, spikein=FALSE)
+res_RLE_background<-dba.analyze(res_RLE_background)
+
+res_TMM_background<-dba.normalize(res_c, normalize=DBA_NORM_TMM, background=TRUE, spikein=FALSE)
+res_TMM_background<-dba.analyze(res_TMM_background)
+```
+
+```{r completing DiffBind normalization and dba spikein}
+res_lib_spikein <- dba.normalize(res_c, normalize=DBA_NORM_LIB, spikein = TRUE)
+res_lib_spikein <- dba.analyze(res_lib_spikein)
+
+res_RLE_spikein <- dba.normalize(res_c, normalize=DBA_NORM_RLE, spikein = TRUE)
+res_RLE_spikein <- dba.analyze(res_RLE_spikein)
+
+res_TMM_spikein <- dba.normalize(res_c, normalize=DBA_NORM_TMM, spikein = TRUE)
+res_TMM_spikein <- dba.analyze(res_TMM_spikein)
+```
+
+```{r MAnorm2 preprocessing}
+system("sh cutandrun_MAnorm2.sh")
+```
+
+```{r MAnorm2 normalization and dba}
+#| warning: false
+#| message: false
+
+consensus_peaks <- consensus_peaks |> mutate(id = row_number()) |> select(CHR, START, END, id)
+
+MAnorm2_df <- read_table("cutandrun_data/cutandrun_profile_bins.xls") |>
+  dplyr::rename(CHR = chrom, START = start, END = end) |>
+  genome_inner_join(consensus_peaks, by = c("CHR", "START", "END"))
+
+## following vignette: https://cran.r-project.org/web/packages/MAnorm2/vignettes/MAnorm2_vignette.html#quick-start
+
+# performing within group normalization
+norm <- MAnorm2::normalize(MAnorm2_df, count = 4:8, occupancy = 24:28) #00hr
+norm <- MAnorm2::normalize(norm, count = 9:11, occupancy = 29:31) #0.5hr
+norm <- MAnorm2::normalize(norm, count = 12:14, occupancy = 32:34) #1hr
+norm <- MAnorm2::normalize(norm, count = 15:17, occupancy = 35:37) #3hr
+norm <- MAnorm2::normalize(norm, count = 18:20, occupancy = 38:40) #24hr
+norm <- MAnorm2::normalize(norm, count = 21:23, occupancy = 41:43) #76hr
+
+# construct a bioCond for each group of samples.
+conds <- list(cond_00hr = bioCond(norm[4:8], norm[24:28], name = "00hr"),
+              cond_0.5hr = bioCond(norm[9:11], norm[29:31], name = "0.5hr"),
+              cond_1hr = bioCond(norm[12:14], norm[32:34], name = "1hr"),
+              cond_3hr = bioCond(norm[15:17], norm[35:37], name = "3hr"),
+              cond_24hr = bioCond(norm[18:20], norm[38:40], name = "24hr"),
+              cond_76hr = bioCond(norm[21:23], norm[41:43], name = "76hr"))
+
+conds <- normBioCond(conds, common.peak.regions = NULL)
+# Fit a mean-variance curve.
+# If the following function call raises an error,
+# set init.coef = c(0.1, 10) or try method = "local".
+conds <- fitMeanVarCurve(conds, method = "parametric", occupy.only = TRUE, init.coef = c(0.1, 10))
+
+res_0.5hr <- diffTest(conds[[1]], conds[[2]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
+res_1hr <- diffTest(conds[[1]], conds[[3]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
+res_3hr <- diffTest(conds[[1]], conds[[4]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
+res_24hr <- diffTest(conds[[1]], conds[[5]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
+res_76hr <- diffTest(conds[[1]], conds[[6]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
+```
+
+## Creating relevant dataframe for each method (0hr versus 3hr)
+
+**From paper: "The fact that the peak of Bdf3 occupancy is reached 3 h following addition of cis-aconitate is especially interesting in light of work showing that commitment to differentiation occurs 2 to 3 h after cisaconitate treatment (57)."**
+
+```{r creating relevant dataframe for each method}
+RLE_peaks <- res_RLE_peaks$contrasts[[3]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "RLE_peaks")
+
+TMM_peaks <- res_TMM_peaks$contrasts[[3]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "TMM_peaks")
+
+lib_peaks <- res_lib_peaks$contrasts[[3]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "lib_peaks")
+
+offsets_peaks <- res_offsets_peaks$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "offsets_peaks")
+
+MAnorm2 <- res_3hr |> select(id, padj) |> mutate(method = "MAnorm2")|>
+  group_by(id) |> arrange(padj) |> slice_head(n = 1)
+
+RLE_background <- res_RLE_background$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "RLE_background")
+
+TMM_background <- res_TMM_background$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "TMM_background")
+
+lib_background <-res_lib_background$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "lib_background")
+
+RLE_spikein <- res_RLE_spikein$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "RLE_spikein")
+
+TMM_spikein <-res_TMM_spikein$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "TMM_spikein")
+
+lib_spikein <- res_lib_spikein$contrasts[[3]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "lib_spikein")
+```
+
+## Wrangling data to prepare for PCA/kmeans clustering
+
+### With spikeins
+
+```{r setting up PCA for raw adj pvals}
+#| echo: false
+# with raw padj values
+PCA_df <- rbind(RLE_peaks, TMM_peaks, lib_peaks, offsets_peaks,
+      RLE_background, TMM_background, lib_background,
+      RLE_spikein, TMM_spikein, lib_spikein, MAnorm2) |>
+  pivot_wider(names_from = method, values_from = padj) |>
+  arrange(id)
+```
+
+```{r setting up PCA for logit transformed adj pvals}
+# with logit transformed padj values
+df_transformed <- rbind(RLE_peaks, TMM_peaks, lib_peaks, offsets_peaks,
+      RLE_background, TMM_background, lib_background,
+      RLE_spikein, TMM_spikein, lib_spikein, MAnorm2) |>
+  arrange(id) |>
+  mutate(padj_transformed = log(padj/(1 - padj))) |>
+  select(-padj) |>
+  pivot_wider(names_from = id, values_from = padj_transformed, names_prefix = "peak_") 
+
+head(df_transformed)
+```
+
+```{r PCA on transformed adj p-vals}
+pca_padj_transformed <- prcomp(df_transformed[-1])
+summary(pca_padj_transformed)
+```
+
+### Heuristics for optimal k-value
+
+```{r evaluating k choice in kmeans}
+# in kmeans there are a number of parameters we can toggle. Notably, we could change the value of k which ultimately influences which norm. methods are clustered together. We will look at some metrics to evaluate which k we want to use in our plots.
+
+fviz_nbclust(df_transformed[-1], kmeans, method = "wss")+
+  geom_vline(xintercept = 4, linetype = "dashed")
+
+fviz_nbclust(df_transformed[-1], kmeans, method = "silhouette")
+
+set.seed(4747)
+fviz_nbclust(df_transformed[-1], kmeans, method = "gap_stat", nboot = 50)
+
+# it looks like most of these heuristics give us back 4
+```
+
+## Plotting PCA and kmeans
+
+```{r plotting PCA and kmeans}
+set.seed(4747)
+
+# doing k means on all 629 consensus peaks
+init_kmeans <- kmeans(x = df_transformed[-1], algorithm = "Lloyd", centers = 4,
+         nstart = 100) 
+
+pca_padj_transformed |>
+  augment(df_transformed) |>
+  mutate(clusters = as.factor(init_kmeans$cluster)) |>
+  mutate(method = case_when(
+    method == "lib_background" ~ "Library Size (Background Bins)",
+    method == "lib_peaks" ~ "Library Size (Reads in Peaks)",
+    method == "RLE_background" ~ "RLE (Background Bins)",
+    method == "RLE_peaks" ~ "RLE (Reads in Peaks)",
+    method == "TMM_background" ~ "TMM (Background Bins)",
+    method == "TMM_peaks" ~ "TMM (Reads in Peaks)",
+    method == "offsets_peaks" ~ "Loess Adjusted Fit (Reads in Peaks)",
+    method == "lib_spikein" ~ "Library Size (Spike-in)",
+    method == "RLE_spikein" ~ "RLE (Spike-in)",
+    method == "TMM_spikein" ~ "TMM (Spike-in)",
+    TRUE ~ method
+  )) |>
+  ggplot(aes(x = .fittedPC1, y = .fittedPC2, color = clusters))+
+  geom_point(size = 3, aes(shape = clusters, fill = clusters))+
+  geom_text_repel(aes(label = method), nudge_x = 20, show.legend = FALSE)+
+  labs(x = "PC1 (75.46%)", y = "PC2 (16.47%)")+
+  scale_shape_manual(values = c(21, 22, 23, 24))+
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  guides(color = guide_legend(title = "K-means Clusters"),
+         fill = guide_legend(title = "K-means Clusters"),
+         shape = guide_legend(title = "K-means Clusters"))+
+  theme_bw()+
+  theme(legend.position = "bottom",
+        text = element_text(color = "black"),
+        axis.text = element_text(color = "black"),
+        legend.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        axis.title = element_text(face = "bold"))
+
+ggsave("../png_outputs/experimental_data_pca.png", bg = "white", dpi = 1500, width = 9, height = 6, units = "in")
+```
