@@ -15,3 +15,23 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 ### Simulation_code Files
 *A brief description of each the files within the simulation_code folder.*
 
+1. **HPCrun.sh**
+
+2. **HPCrun.R**
+
+3. **big_function.R**
+
+4. **simulate_reads_proportions.R**
+
+5. **addBackground_new.R**
+
+6. **macs2.sh**
+
+7. **read_analysis.R**
+
+8. **dba.normalize.sim.R**
+
+9. **MAnorm2.sh**
+
+10. **MAnorm2.sim.R**
+
