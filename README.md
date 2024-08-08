@@ -12,7 +12,7 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 ---
 
-### Simulation_code Files
+## Simulation_code Files
 *A brief description of each the files within the simulation_code folder.*
 
 1. **HPCrun.sh**
