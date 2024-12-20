@@ -1,6 +1,7 @@
 #!/bin/bash
-#brew install bedtools #not available through pip. So, dependent on you having homebrew installed
-#pip install MAnorm2_utils #this is available through pip
+
+#uses bedtools package which not available through pip but is in homebrew
+#uses MAnorm2_utils package which is available through pip
 
 
 for file in ./sim_folder_$1_do_$2/MAnorm2/*.bam; do

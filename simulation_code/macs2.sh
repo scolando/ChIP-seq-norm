@@ -1,6 +1,6 @@
 #!/bin/bash
-## running macs2 with shell script...
-# pip install macs2  # (do we need to repeatedly install?)
+
+## running macs2 peak-calling with shell script...
 
 for file in ./sim_folder_$1_do_$2/*.bam; do
   name=$(basename $file) 

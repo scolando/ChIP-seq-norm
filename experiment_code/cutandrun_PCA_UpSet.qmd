@@ -22,7 +22,6 @@ library(edgeR)
 library(csaw)
 library(MAnorm2)
 library(fuzzyjoin)
-library(NbClust)
 library(factoextra)
 library(broom)
 library(ggrepel)
@@ -424,7 +423,7 @@ list <- list(`RLE (Reads in Peaks)` = RLE_peaks_db,
      `TMM (Spike-ins)` = TMM_spikein_db,
      `Library Size (Spike-ins)` = lib_spikein_db)
 
-png("upset_plot_high_res.png", width = 14, height = 8, units = "in", res = 300)
+png("../png_outputs/upset_plot_high_res.png", width = 14, height = 8, units = "in", res = 300)
 
 UpSetR::upset(fromList(list), order.by = "freq", nsets = 11, nintersects = 20,
               text.scale = 1.75, mainbar.y.label = "Distinct Intersection Size\nof Called DB Peakset(s)",

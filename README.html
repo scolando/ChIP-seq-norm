@@ -352,8 +352,10 @@ display: none;
 </div>
 
 
+<hr />
 <div id="chip-seq-norm" class="section level1">
 <h1>ChIP-Seq-norm</h1>
+<hr />
 <p>Repository with code associated with the paper, “Selecting ChIP-Seq
 Normalization Methods from the Perspective of their Technical
 Conditions”</p>
@@ -361,40 +363,141 @@ Conditions”</p>
 <li><p>The <strong>simulation_code</strong> folder contains the code to
 simulate the ChIP-Seq read counts and conduct downstream normalization
 and differential binding analysis (dba) using MAnorm2 an DiffBind. <em>A
-brief description of each file within the simulation_code folder can be
+brief description of the files within the simulation_code folder can be
 found below</em></p></li>
 <li><p>The <strong>sim_visualization_code</strong> folder contains the
 code to analyze the outputted .csvs from the simulated data, comparing
 average false discovery rate, power, and absolute size factor ratios
-across the eight distinct simulation conditions.</p></li>
+across our eight distinct simulation conditions.</p></li>
 <li><p>The <strong>experiment_code</strong> folder contains the code to
-conduct PCA and K-means clustering on actual CutandRun data, which is
-from the paper “Genomic Occupancy of the Bromodomain Protein Bdf3 Is
-Dynamic during Differentiation of African Trypanosomes from Bloodstream
-to Procyclic Forms” by Ashby et al. (2023). <em>The Fastq files for
-RNA-seq used in this paper are available from the NCBI SRA under
-accession number <a href="https://www.ncbi.nlm.nih.gov/bioproject/PRJNA924324">PRJNA924324</a>.</em></p></li>
+conduct PCA on experimental CUT&amp;RUN data, which is from the paper
+“Genomic Occupancy of the Bromodomain Protein Bdf3 Is Dynamic during
+Differentiation of African Trypanosomes from Bloodstream to Procyclic
+Forms” by Ashby et al. (2023). <em>The Fastq files for RNA-seq used in
+this paper are available from the NCBI SRA under accession number <a href="https://www.ncbi.nlm.nih.gov/bioproject/PRJNA924324">PRJNA924324</a>.</em></p></li>
 <li><p>The <strong>png_outputs</strong> folder contains the
 visualizations created by analyzing the simulated and experimental
 data.</p></li>
 </ol>
-<div id="simulation_code-files" class="section level2">
-<h2>Simulation_code Files</h2>
-<p><em>A brief description of each the files within the simulation_code
-folder.</em></p>
-<ol style="list-style-type: decimal">
-<li><p><strong>HPCrun.sh</strong> is the shell script to run
-the</p></li>
-<li><p><strong>HPCrun.R</strong></p></li>
-<li><p><strong>big_function.R</strong></p></li>
-<li><p><strong>simulate_reads_proportions.R</strong></p></li>
-<li><p><strong>addBackground_new.R</strong></p></li>
-<li><p><strong>macs2.sh</strong></p></li>
-<li><p><strong>read_analysis.R</strong></p></li>
-<li><p><strong>dba.normalize.sim.R</strong></p></li>
-<li><p><strong>MAnorm2.sh</strong></p></li>
-<li><p><strong>MAnorm2.sim.R</strong></p></li>
-</ol>
+<hr />
+<div id="files-in-simulation_code-folder" class="section level2">
+<h2>Files in simulation_code Folder</h2>
+<hr />
+<table>
+<caption><em>A brief description of each the files within the
+simulation_code folder.</em></caption>
+<colgroup>
+<col width="7%" />
+<col width="92%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">File Name</th>
+<th align="left">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><strong>HPCrun.sh</strong></td>
+<td align="left">Shell script to run the HPCrun.R via a slurm job</td>
+</tr>
+<tr class="even">
+<td align="left"><strong>HPCrun.R</strong></td>
+<td align="left">Rscript which sets the simulation parameters, executes
+the purrr parallelization of the big_function.R, and writes the output
+to a CSV based on the simulations specs</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>big_function.R</strong></td>
+<td align="left">Function which contains the two simulation
+sub-functions: simulate_reads_proportions.R and read_analysis.R. It also
+recursively deletes previous simulation files to free up the system’s
+memory.</td>
+</tr>
+<tr class="even">
+<td align="left"><strong>simulate_reads_proportions.R</strong></td>
+<td align="left">Function which creates .bam and .bam.bai files based on
+simulation parameters, as well as preforms peak-calling via <a href="https://pypi.org/project/MACS2/">MACS2</a> (by calling
+macs2.sh).</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>addBackground_new.R</strong></td>
+<td align="left">Function called within the simulate_reads_proportions.R
+function to add background binding to each sample replicate. This
+function is an adapted version of the addBackground function in the <a href="https://bioinf.wehi.edu.au/csaw/">xscss package</a>, which
+accompanies the <a href="https://www.bioconductor.org/packages/release/bioc/html/csaw.html">csaw
+package</a>.</td>
+</tr>
+<tr class="even">
+<td align="left"><strong>macs2.sh</strong></td>
+<td align="left">Shell script which performs MACS2 peak-calling
+generating the relevant .narrowpeak files for each replicate.</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>read_analysis.R</strong></td>
+<td align="left"><p>Function which analyzes the files outputted from
+simulate_reads_proportions.R (i.e., .bam, .bam.bai, and .narrowpeak
+files for each replicate), using the <a href="https://bioconductor.org/packages/release/bioc/html/DiffBind.html">DiffBind
+package</a> to identify consensus peaks, conduct between-sample
+normalization (using dba.normalize.sim.R), and differential binding
+analysis (using the method native to DESeq2).</p>
+<p>To perform MAnorm2 normalization and differential binding analysis,
+the function calls MAnorm2.sh and MAnorm2.sim.R since MAnorm2 is not
+available in DiffBind.</p></td>
+</tr>
+<tr class="even">
+<td align="left"><strong>dba.normalize.sim.R</strong></td>
+<td align="left">Wrapper function for the dba.normalize function in the
+DiffBind package, which allows the normalization method’s name to be
+input as a string to conduct the proper between-sample normalization.
+Supports the seven between-sample normalization methods outlined on pg.
+46 of DiffBind’s vignette (Section 7.5).</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>MAnorm2.sh</strong></td>
+<td align="left">Shell script which generates the .csv needed for
+MAnorm2 normalization and differential binding analysis using the <a href="https://github.com/tushiqi/MAnorm2_utils">MAnorm2_utils
+package</a>.</td>
+</tr>
+<tr class="even">
+<td align="left"><strong>MAnorm2.sim.R</strong></td>
+<td align="left">Function which performs MANorm2 within and
+between-sample normalization, as well as differential binding analysis
+as suggested in the <a href="https://cran.r-project.org/web/packages/MAnorm2/vignettes/MAnorm2_vignette.html">MAnorm2
+vignette</a>. Adds the MAnorm2 results to the dataset which contains the
+results from all other between-sample normalization methods tested.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+</div>
+<div id="required-packages" class="section level2">
+<h2>Required Packages</h2>
+<hr />
+<p><strong>Bioconductor Packages</strong></p>
+<ul>
+<li><a href="https://www.bioconductor.org/packages/release/bioc/html/DiffBind.html">DiffBind</a>,
+<a href="https://www.bioconductor.org/packages/release/bioc/html/csaw.html">csaw</a>,
+<a href="https://bioconductor.org/packages/release/bioc/html/edgeR.html">edgeR</a>,
+<a href="https://www.bioconductor.org/packages/release/bioc/html/GreyListChIP.html">GreyListChIP</a></li>
+</ul>
+<p><strong>CRAN Packages</strong></p>
+<ul>
+<li><a href="https://cran.r-project.org/web/packages/MAnorm2/index.html">MAnorm2</a>,
+<a href="https://cran.r-project.org/web/packages/tidyverse/index.html">Tidyverse</a>,
+<a href="https://cran.r-project.org/web/packages/psych/index.html">psych</a>,
+<a href="https://cran.r-project.org/web/packages/truncnorm/index.html">truncnorm</a>,
+<a href="https://cran.r-project.org/web/packages/fuzzyjoin/index.html">fuzzyjoin</a>,
+<a href="https://cran.r-project.org/web/packages/factoextra/index.html">factoextra</a>,
+<a href="https://cran.r-project.org/web/packages/UpSetR/index.html">UpSetR</a>,
+<a href="https://cran.r-project.org/web/packages/broom/index.html">broom</a>,
+<a href="https://cran.r-project.org/web/packages/ggrepel/index.html">ggrepel</a></li>
+</ul>
+<p><strong>Other Packages</strong></p>
+<ul>
+<li><a href="https://pypi.org/project/MACS2/">MACS2</a>, <a href="https://bedtools.readthedocs.io/en/latest/content/installation.html">bedtools</a>,
+<a href="https://pypi.org/project/MAnorm2-utils/">MAnorm2_utils</a></li>
+</ul>
 </div>
 </div>
 

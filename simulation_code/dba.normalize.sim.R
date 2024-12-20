@@ -7,7 +7,7 @@ dba.normalize.sim <- function(DBA, method = DBA$config$AnalysisMethod,
                               background = FALSE, spikein = FALSE, offsets = FALSE,
                               libFun=mean, bRetrieve=FALSE, ...){
   
-  # Jo from this help file: https://support.bioconductor.org/p/p133921/
+  
   # set the number of cores being used to normalize
   
   ## 3 below normalize via reads in peaks
@@ -70,7 +70,6 @@ dba.normalize.sim <- function(DBA, method = DBA$config$AnalysisMethod,
   
   
   return(res_norm)
-  #return()
   print("finished!")
   
 }

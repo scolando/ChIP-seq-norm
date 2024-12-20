@@ -31,7 +31,7 @@ big_function <- function(iters, prop.do = 0.05,
                          FDR.threshold = 0.05) 
 {
   
-### simulate ChIP-Seq read counts   
+  ### simulate ChIP-Seq read counts   
   simulate_reads_proportions(iters = iters, prop.do = prop.do, 
                              symmetry = symmetry, 
                              equal.DNA.bind = equal.DNA.bind,
@@ -46,7 +46,7 @@ big_function <- function(iters, prop.do = 0.05,
                              back.vary.down = back.vary.down,
                              back.vary.up = back.vary.up)
   
-### analyze the simulated read counts using DiffBind and MAnorm2
+  ### analyze the simulated read counts using DiffBind and MAnorm2
   df_all_final <- read_analysis(iters = iters, prop.do = prop.do,
                                 symmetry = symmetry,
                                 equal.DNA.bind = equal.DNA.bind,
@@ -56,9 +56,9 @@ big_function <- function(iters, prop.do = 0.05,
                                 prop.consensus = prop.consensus,
                                 FDR.threshold = FDR.threshold) 
   
-## For the sake of memory, we unlink (i.e., delete) each folder after creating the final data frame:
+  ## For the sake of memory, we unlink (i.e., delete) each folder after creating the final data frame:
  
-     unlink(paste0("./sim_folder_",iters,"_do_",prop.do,"/"), recursive = TRUE)
+  unlink(paste0("./sim_folder_",iters,"_do_",prop.do,"/"), recursive = TRUE)
 
   return(df_all_final)
 }

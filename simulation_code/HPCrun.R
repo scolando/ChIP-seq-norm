@@ -2,7 +2,6 @@
 options('future.globals.maxSize' = 1014*1024^2)
 
 ## loading required packages:
-
 library(tidyverse) #for data wrangling
 library(xscss) #for ChIP-Seq read count simulations
 # Instructions for downloading xscss: https://bioinf.wehi.edu.au/csaw/
