@@ -1,8 +1,5 @@
-------------------------------------------------------------------------
 
 # ChIP-Seq-norm
-
-------------------------------------------------------------------------
 
 Repository with code associated with the paper, "Selecting ChIP-Seq Normalization Methods from the Perspective of their Technical Conditions"
 
@@ -14,12 +11,9 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 4.  The **png_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
 
-------------------------------------------------------------------------
 
 ## Files in simulation_code Folder
-
-------------------------------------------------------------------------
-
+*A brief description of each the files within the simulation_code folder.*
 
 | File Name                        | Purpose                                                                                                                                                                                                                                                                                                                                                                                                               |
 |:---|:---|
@@ -34,14 +28,7 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 | **MAnorm2.sh**                   | Shell script which generates the .csv needed for MAnorm2 normalization and differential binding analysis using the [MAnorm2_utils package](https://github.com/tushiqi/MAnorm2_utils).                                                                                                                                                                                                                                 |
 | **MAnorm2.sim.R**                | Function which performs MANorm2 within and between-sample normalization, as well as differential binding analysis as suggested in the [MAnorm2 vignette](https://cran.r-project.org/web/packages/MAnorm2/vignettes/MAnorm2_vignette.html). Adds the MAnorm2 results to the dataset which contains the results from all other between-sample normalization methods tested.                                             |
 
-
-: *A brief description of each the files within the simulation_code folder.*
-
-------------------------------------------------------------------------
-
 ## Required Packages
-
-------------------------------------------------------------------------
 
 **Bioconductor Packages**
 
