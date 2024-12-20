@@ -1,19 +1,18 @@
 ---
-title: "CutandRun Normalization Methods: PCA and K-means Clustering"
+title: "CUT&RUN Normalization Methods: PCA and UpSet Plot"
 format:
   html:
     toc: true
     toc-depth: 3
     toc-expand: true
     number-sections: true
-editor: visual
 knitr: 
   opts_chunk: 
     warning: false
     message: false
 ---
 
-## Loading packages and creating dba object
+## Loading Packages and Creating the DBA Object
 
 ```{r loading required packages}
 library(tidyverse)
@@ -27,6 +26,7 @@ library(NbClust)
 library(factoextra)
 library(broom)
 library(ggrepel)
+library(UpSetR)
 ```
 
 ```{r reading in files}
@@ -92,6 +92,7 @@ res_s<-invisible(suppressMessages(dba.blacklist(res_s, greylist=gl@regions)))
 # adds consensus peaks: those that overlap in 3 replicates
 # DBA peakset function has a list of consensus parameters, DBA_CONDITION is saying that samples should be grouped based on timepoint which we defined up above when we created the DBA object
 res_consensus <- dba.peakset(res_s, consensus=c(DBA_CONDITION), minOverlap=3)
+
 #mask other peaksets, focuses only on consensus
 # functions called on DBA only looks at consensus peak sets, so we maintain replicates but within each replicate only peaks that show up in other replicates remain
 res_consensus <- dba(res_consensus, mask=res_consensus$masks$Consensus,
@@ -197,7 +198,8 @@ conds <- normBioCond(conds, common.peak.regions = NULL)
 # Fit a mean-variance curve.
 # If the following function call raises an error,
 # set init.coef = c(0.1, 10) or try method = "local".
-conds <- fitMeanVarCurve(conds, method = "parametric", occupy.only = TRUE, init.coef = c(0.1, 10))
+conds <- fitMeanVarCurve(conds, method = "parametric", occupy.only = TRUE,
+                         init.coef = c(0.1, 10))
 
 res_0.5hr <- diffTest(conds[[1]], conds[[2]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
 res_1hr <- diffTest(conds[[1]], conds[[3]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
@@ -206,9 +208,7 @@ res_24hr <- diffTest(conds[[1]], conds[[5]]) |> cbind(id = MAnorm2_df$id) |> sel
 res_76hr <- diffTest(conds[[1]], conds[[6]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
 ```
 
-## Creating relevant dataframe for each method (0hr versus 3hr)
-
-**From paper: "The fact that the peak of Bdf3 occupancy is reached 3 h following addition of cis-aconitate is especially interesting in light of work showing that commitment to differentiation occurs 2 to 3 h after cisaconitate treatment (57)."**
+## Creating Relevant Data Frame for Each Method (0hr versus 3hr)
 
 ```{r creating relevant dataframe for each method}
 RLE_peaks <- res_RLE_peaks$contrasts[[3]]$DESeq2$de  |>
@@ -255,66 +255,85 @@ lib_spikein <- res_lib_spikein$contrasts[[3]]$DESeq2$de |>
   mutate(method = "lib_spikein")
 ```
 
-## Wrangling data to prepare for PCA/kmeans clustering
+## PCA on log2 Normalized Fold Changes Corresponding to Each Method
 
-### With spikeins
+```{r}
+RLE_peaks_FC <- res_RLE_peaks$contrasts[[3]]$DESeq2$de  |>
+  select(id, fold) |>
+  mutate(method = "RLE_peaks")
 
-```{r setting up PCA for raw adj pvals}
-#| echo: false
-# with raw padj values
-PCA_df <- rbind(RLE_peaks, TMM_peaks, lib_peaks, offsets_peaks,
-      RLE_background, TMM_background, lib_background,
-      RLE_spikein, TMM_spikein, lib_spikein, MAnorm2) |>
-  pivot_wider(names_from = method, values_from = padj) |>
-  arrange(id)
+TMM_peaks_FC <- res_TMM_peaks$contrasts[[3]]$DESeq2$de  |>
+  select(id, fold) |>
+  mutate(method = "TMM_peaks")
+
+lib_peaks_FC <- res_lib_peaks$contrasts[[3]]$DESeq2$de  |>
+  select(id, fold) |>
+  mutate(method = "lib_peaks")
+
+offsets_peaks_FC <- res_offsets_peaks$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "offsets_peaks")
+
+MAnorm2_FC <- diffTest(conds[[1]], conds[[4]]) |> 
+  cbind(id = MAnorm2_df$id) |> 
+  select(id, Mval) |>
+  dplyr::rename(fold = Mval) |>
+  group_by(id) |>
+  summarize(fold = max(fold)) |> #not sure about this step
+  mutate(method = "MAnorm2")
+
+RLE_background_FC <- res_RLE_background$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "RLE_background")
+
+TMM_background_FC <- res_TMM_background$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "TMM_background")
+
+lib_background_FC <-res_lib_background$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "lib_background")
+
+RLE_spikein_FC <- res_RLE_spikein$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "RLE_spikein")
+
+TMM_spikein_FC <-res_TMM_spikein$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "TMM_spikein")
+
+lib_spikein_FC <- res_lib_spikein$contrasts[[3]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "lib_spikein")
 ```
 
-```{r setting up PCA for logit transformed adj pvals}
-# with logit transformed padj values
-df_transformed <- rbind(RLE_peaks, TMM_peaks, lib_peaks, offsets_peaks,
-      RLE_background, TMM_background, lib_background,
-      RLE_spikein, TMM_spikein, lib_spikein, MAnorm2) |>
+```{r}
+PCA_FC_df <- rbind(RLE_peaks_FC, TMM_peaks_FC, lib_peaks_FC, offsets_peaks_FC,
+      RLE_background_FC, TMM_background_FC, lib_background_FC,
+      RLE_spikein_FC, TMM_spikein_FC, lib_spikein_FC) |>
   arrange(id) |>
-  mutate(padj_transformed = log(padj/(1 - padj))) |>
-  select(-padj) |>
-  pivot_wider(names_from = id, values_from = padj_transformed, names_prefix = "peak_") 
-
-head(df_transformed)
+  pivot_wider(names_from = id, values_from = fold, names_prefix = "peak_") 
 ```
 
-```{r PCA on transformed adj p-vals}
-pca_padj_transformed <- prcomp(df_transformed[-1])
-summary(pca_padj_transformed)
+```{r}
+pca_FC <- prcomp(PCA_FC_df[-1])
+summary(pca_FC)
 ```
 
-### Heuristics for optimal k-value
-
-```{r evaluating k choice in kmeans}
-# in kmeans there are a number of parameters we can toggle. Notably, we could change the value of k which ultimately influences which norm. methods are clustered together. We will look at some metrics to evaluate which k we want to use in our plots.
-
-fviz_nbclust(df_transformed[-1], kmeans, method = "wss")+
-  geom_vline(xintercept = 4, linetype = "dashed")
-
-fviz_nbclust(df_transformed[-1], kmeans, method = "silhouette")
-
-set.seed(4747)
-fviz_nbclust(df_transformed[-1], kmeans, method = "gap_stat", nboot = 50)
-
-# it looks like most of these heuristics give us back 4
-```
-
-## Plotting PCA and kmeans
-
-```{r plotting PCA and kmeans}
-set.seed(4747)
-
-# doing k means on all 629 consensus peaks
-init_kmeans <- kmeans(x = df_transformed[-1], algorithm = "Lloyd", centers = 4,
-         nstart = 100) 
-
-pca_padj_transformed |>
-  augment(df_transformed) |>
-  mutate(clusters = as.factor(init_kmeans$cluster)) |>
+```{r}
+pca_FC |>
+  augment(PCA_FC_df) |>
+  mutate(text_y_position = case_when(
+    method == "offsets_peaks" ~ .fittedPC2 + 0.2,
+    method == "lib_peaks" ~ .fittedPC2 + 0.1,
+    method == "TMM_background" ~ .fittedPC2 + 0.075,
+    method == "RLE_background" ~ .fittedPC2,
+    TRUE ~ .fittedPC2 - 0.1),
+    text_x_position = case_when(
+      method == "TMM_background" ~ .fittedPC1 - 8.5,
+      method == "RLE_background" ~ .fittedPC1 - 8.5,
+      TRUE ~ .fittedPC1,
+    )) |>
   mutate(method = case_when(
     method == "lib_background" ~ "Library Size (Background Bins)",
     method == "lib_peaks" ~ "Library Size (Reads in Peaks)",
@@ -328,16 +347,11 @@ pca_padj_transformed |>
     method == "TMM_spikein" ~ "TMM (Spike-in)",
     TRUE ~ method
   )) |>
-  ggplot(aes(x = .fittedPC1, y = .fittedPC2, color = clusters))+
-  geom_point(size = 3, aes(shape = clusters, fill = clusters))+
-  geom_text_repel(aes(label = method), nudge_x = 20, show.legend = FALSE)+
-  labs(x = "PC1 (75.46%)", y = "PC2 (16.47%)")+
-  scale_shape_manual(values = c(21, 22, 23, 24))+
-  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE)+
-  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
-  guides(color = guide_legend(title = "K-means Clusters"),
-         fill = guide_legend(title = "K-means Clusters"),
-         shape = guide_legend(title = "K-means Clusters"))+
+  ggplot(aes(x = .fittedPC1, y = .fittedPC2))+
+  geom_point(size = 3)+
+  geom_text(aes(label = method, x = text_x_position,
+                      y = text_y_position), hjust = 0)+
+ labs(x = "PC1 (99.45%)", y = "PC2 (0.39%)")+
   theme_bw()+
   theme(legend.position = "bottom",
         text = element_text(color = "black"),
@@ -346,5 +360,76 @@ pca_padj_transformed |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/experimental_data_pca.png", bg = "white", dpi = 1500, width = 9, height = 6, units = "in")
+ggsave("../png_outputs/experimental_data_pca.png", bg = "white", dpi = 1500, width = 9, 
+       height = 6, units = "in")
+```
+
+## UpSet Plot of Differentially Bound Peaksets
+
+```{r}
+RLE_peaks_db <- RLE_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+TMM_peaks_db <- TMM_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+lib_peaks_db <- lib_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+offsets_peaks_db <- offsets_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+MAnorm2_peaks_db <- MAnorm2 |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+RLE_background_db <- RLE_background |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+TMM_background_db <- TMM_background |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+lib_background_db <- lib_background |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+RLE_spikein_db <- RLE_spikein |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+TMM_spikein_db <- TMM_spikein |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+lib_spikein_db <- lib_spikein |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+```
+
+```{r}
+list <- list(`RLE (Reads in Peaks)` = RLE_peaks_db,
+     `TMM (Reads in Peaks)` = TMM_peaks_db,
+     `Library Size (Reads in Peaks)` = lib_peaks_db,
+     `Loess Adjusted Fit (Reads in Peaks)` = offsets_peaks_db,
+     `RLE (Background Bins)` = RLE_background_db,
+     `TMM (Background Bins)` = TMM_background_db,
+     `Library Size (Background Bins)` = lib_background_db,
+     `RLE (Spike-ins)` = RLE_spikein_db,
+     `TMM (Spike-ins)` = TMM_spikein_db,
+     `Library Size (Spike-ins)` = lib_spikein_db)
+
+png("upset_plot_high_res.png", width = 14, height = 8, units = "in", res = 300)
+
+UpSetR::upset(fromList(list), order.by = "freq", nsets = 11, nintersects = 20,
+              text.scale = 1.75, mainbar.y.label = "Distinct Intersection Size\nof Called DB Peakset(s)",
+              main.bar.color = "black", matrix.color = "black",
+              point.size = 3, line.size = 1, sets.x.label = "")
+
+dev.off()
 ```

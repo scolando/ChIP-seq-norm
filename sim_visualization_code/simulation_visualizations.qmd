@@ -19,6 +19,8 @@ knitr:
 
 ```{r loading tidyverse and data}
 library(tidyverse)
+shape_palette <- c(16, 17, 15, 18, 3, 4, 8, 7, 9)
+
 
 TTT_10_rep <- read_csv("simulation_data/TTT_10_rep.csv")
 TTF_10_rep <- read_csv("simulation_data/TTF_10_rep.csv")
@@ -55,13 +57,13 @@ data_10_rep <- TTT_10_rep |>
   mutate(technique = fct_relevel(technique, "Loess Adjusted Fit (Reads in Peaks)", after = 8),
          technique = fct_relevel(technique, "MAnorm2", after = 8),
          technique = fct_relevel(technique, "Oracle"),
-         symm = if_else(symmetry == TRUE, "Symmetric Differential Occupancy",
-                        "Asymmetric Differential Occupancy"),
-         symm = fct_relevel(symm, "Symmetric Differential Occupancy"),
-         dna = if_else(equal.DNA.bind == TRUE, "Equal DNA Occupancy", 
-                       "Unequal DNA Occupancy"),
-         back = if_else(constant.background == TRUE, "Equal Background Binding",
-                        "Unequal Background Binding")) 
+         symm = if_else(symmetry == TRUE, "Symmetry",
+                        "Asymmetry"),
+         symm = fct_relevel(symm, "Symmetry"),
+         dna = if_else(equal.DNA.bind == TRUE, "Equal Occupancy", 
+                       "Unequal Occupancy"),
+         back = if_else(constant.background == TRUE, "Equal Background",
+                        "Unequal Background")) 
 
 data_4_rep <- TTT_4_rep |>
   rbind(TTF_4_rep, FTT_4_rep, TFT_4_rep, FFT_4_rep, TFF_4_rep, FTF_4_rep, FFF_4_rep) |>
@@ -78,13 +80,13 @@ data_4_rep <- TTT_4_rep |>
   mutate(technique = fct_relevel(technique, "Loess Adjusted Fit (Reads in Peaks)", after = 8),
          technique = fct_relevel(technique, "MAnorm2", after = 8),
          technique = fct_relevel(technique, "Oracle"),
-         symm = if_else(symmetry == TRUE, "Symmetric Differential Occupancy",
-                        "Asymmetric Differential Occupancy"),
-         symm = fct_relevel(symm, "Symmetric Differential Occupancy"),
-         dna = if_else(equal.DNA.bind == TRUE, "Equal DNA Occupancy", 
-                       "Unequal DNA Occupancy"),
-         back = if_else(constant.background == TRUE, "Equal Background Binding",
-                        "Unequal Background Binding")) 
+         symm = if_else(symmetry == TRUE, "Symmetry",
+                        "Asymmetry"),
+         symm = fct_relevel(symm, "Symmetry"),
+         dna = if_else(equal.DNA.bind == TRUE, "Equal Occupancy", 
+                       "Unequal Occupancy"),
+         back = if_else(constant.background == TRUE, "Equal Background",
+                        "Unequal Background")) 
 ```
 
 ## Overall average false discovery rate and power
@@ -95,23 +97,28 @@ data_10_rep |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
   mutate(avg_FDR_jittered = jitter(avg_FDR)) |>
   ggplot(aes(x = prop.do, y = avg_FDR_jittered))+
-  geom_hline(aes(yintercept = FDR.threshold))+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique, linetype = technique))+
+  geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average False Discovery Rate")+
   facet_grid(back ~ symm + dna)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
-  guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
+  guides(color = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/all_FDR_10_rep.png", bg = "white", dpi = 1500, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/all_FDR_10_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r all power -- 10 rep}
@@ -120,48 +127,58 @@ data_10_rep  |>
   summarize(avg_power = mean(true_positives/(true_positives + false_negatives), 
                              na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_power))+
-  geom_hline(yintercept = 1)+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique))+
+  geom_hline(yintercept = 1, linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average Power")+
   facet_grid(back ~ symm + dna)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
 
-ggsave("../png_outputs/all_power_10_rep.png", bg = "white", dpi = 2000, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/all_power_10_rep.png", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
 ```
 
 ```{r all FDR -- 4 rep}
 data_4_rep |>
-  group_by(prop.do, technique, symm, back, dna, FDR.threshold) |>
+  group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_FDR))+
-  geom_hline(aes(yintercept = FDR.threshold))+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique, linetype = technique))+
+  geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average False Discovery Rate")+
-  facet_grid(back ~ dna + symm)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
-  guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+  facet_grid(back ~ symm + dna)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
+  guides(color = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/all_FDR_4_rep.png", bg = "white", dpi = 1500, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/all_FDR_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r all power -- 4 rep}
@@ -170,23 +187,28 @@ data_4_rep |>
   summarize(avg_power = mean(true_positives/(true_positives + false_negatives), 
                              na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_power))+
-  geom_hline(yintercept = 1)+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique, linetype = technique))+
+  geom_hline(yintercept = 1, linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average Power")+
-  facet_grid(back ~ dna + symm)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  facet_grid(back ~ symm + dna)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/all_power_4_rep.png", bg = "white", dpi = 1500, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/all_power_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r dataframe of the Oracle size factors -- 4 rep}
@@ -214,11 +236,8 @@ sizefactors_rel_oracle_4 <- data_4_rep |>
    mutate(sizefactor_ratio = if_else(technique_sizefactor/oracle_sizefactor >= 1,
                                      technique_sizefactor/oracle_sizefactor,
                                      oracle_sizefactor/technique_sizefactor)) |>
-  group_by(technique, symm, dna, back, prop.do, it) |>
-  summarize(mean_sizefactor_ratio_it = mean(sizefactor_ratio)) |>
-  ungroup() |>
   group_by(technique, symm, dna, back, prop.do) |>
-  summarize(mean_sizefactor_ratio_prop.do = mean(mean_sizefactor_ratio_it)) 
+  summarize(mean_sizefactor_ratio_prop.do = mean(sizefactor_ratio)) 
 
 sizefactors_rel_oracle_10 <- data_10_rep |>
   select(technique, symm, dna, back,
@@ -230,11 +249,8 @@ sizefactors_rel_oracle_10 <- data_10_rep |>
    mutate(sizefactor_ratio = if_else(technique_sizefactor/oracle_sizefactor >= 1,
                                      technique_sizefactor/oracle_sizefactor,
                                      oracle_sizefactor/technique_sizefactor)) |>
-  group_by(technique, symm, dna, back, prop.do, it) |>
-  summarize(mean_sizefactor_ratio_it = mean(sizefactor_ratio)) |>
-  ungroup() |>
   group_by(technique, symm, dna, back, prop.do) |>
-  summarize(mean_sizefactor_ratio_prop.do = mean(mean_sizefactor_ratio_it)) 
+  summarize(mean_sizefactor_ratio_prop.do = mean(sizefactor_ratio)) 
 ```
 
 ## 95% confidence intervals on average false discovery rate and power
@@ -244,29 +260,33 @@ data_10_rep |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE),
             se_FDR = sd(FDR, na.rm = TRUE)/sqrt(n())) |>
-  mutate(avg_FDR_jittered = jitter(avg_FDR)) |>
-  ggplot(aes(x = prop.do, y = avg_FDR_jittered))+
-  geom_hline(aes(yintercept = FDR.threshold))+
+  ggplot(aes(x = prop.do, y = avg_FDR))+
+  geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
   geom_ribbon(aes(ymin = avg_FDR - 2*se_FDR, ymax = avg_FDR + 2*se_FDR,
-                  fill = technique), alpha = 0.2)+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique, linetype = technique))+
+                  fill = technique), alpha = 0.1)+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average False Discovery Rate")+
   facet_grid(back ~ symm + dna)+
-    grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
-  grafify::scale_fill_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"),
          fill = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/CI_FDR_10_rep.png", bg = "white", dpi = 1500, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/CI_FDR_10_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r CI power -- 10 rep}
@@ -276,58 +296,68 @@ data_10_rep  |>
             se_power = sd(true_positives/(true_positives + false_negatives),
                            na.rm = TRUE)/sqrt(n())) |>
   ggplot(aes(x = prop.do, y = avg_power))+
-  geom_hline(yintercept = 1)+
+  geom_hline(yintercept = 1, linetype = "dashed")+
   geom_ribbon(aes(ymin = avg_power - 2*se_power,
                   ymax = avg_power + 2*se_power, fill = technique),
-              alpha = 0.2)+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique))+
+              alpha = 0.1)+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
-  ylab("Average Power")+
+  ylab("Average False Discovery Rate")+
   facet_grid(back ~ symm + dna)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
-  grafify::scale_fill_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"),
          fill = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
 
-ggsave("../png_outputs/CI_power_10_rep.png", bg = "white", dpi = 2000, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/CI_power_10_rep.png", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
 ```
 
 ```{r CI FDR -- 4 rep}
 data_4_rep |>
-  group_by(prop.do, technique, symm, back, dna, FDR.threshold) |>
+  group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE),
             se_FDR = sd(FDR, na.rm = TRUE)/sqrt(n())) |>
   ggplot(aes(x = prop.do, y = avg_FDR))+
-  geom_hline(aes(yintercept = FDR.threshold))+
+  geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
   geom_ribbon(aes(ymin = avg_FDR - 2*se_FDR, ymax = avg_FDR + 2*se_FDR,
-                  fill = technique), alpha = 0.2)+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique, linetype = technique))+
+                  fill = technique), alpha = 0.1)+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average False Discovery Rate")+
-  facet_grid(back ~ dna + symm)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
-  grafify::scale_fill_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  facet_grid(back ~ symm + dna)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"),
          fill = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/CI_FDR_4_rep.png", bg = "white", dpi = 1500, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/CI_FDR_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r CI power -- 4 rep}
@@ -337,33 +367,46 @@ data_4_rep  |>
             se_power = sd(true_positives/(true_positives + false_negatives),
                            na.rm = TRUE)/sqrt(n())) |>
   ggplot(aes(x = prop.do, y = avg_power))+
-  geom_hline(yintercept = 1)+
+  geom_hline(yintercept = 1, linetype = "dashed")+
   geom_ribbon(aes(ymin = avg_power - 2*se_power,
                   ymax = avg_power + 2*se_power, fill = technique),
-              alpha = 0.2)+
-  geom_point(aes(color = technique), size = 0.5)+
-  geom_line(aes(color = technique, linetype = technique))+
+              alpha = 0.1)+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
-  ylab("Average Power")+
-  facet_grid(back ~ dna + symm)+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
-  grafify::scale_fill_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  ylab("Average False Discovery Rate")+
+  facet_grid(back ~ symm + dna)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"),
          fill = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/CI_power_4_rep.png", bg = "white", dpi = 1500, width = 13, height = 8, units = "in")
+ggsave("../png_outputs/CI_power_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
+
+```{r thresholds dataframe}
+thresholds <- data.frame(metric = c("Average FDR","Average Power", 
+                                    "Average Absolute\nSize Factor Ratio\nRelative to the Oracle"),
+                         yint = c(0.05, 1, 1)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle"))
+```
+
 
 ### TTT Panels
 
-```{r 1 TTT for 4 and 10 rep}
+```{r 1 TTT 4 rep}
 data_4_rep |>
   filter(symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
@@ -379,36 +422,45 @@ data_4_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: All Technical Conditions Met")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTT-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../png_outputs/TTT-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+```
 
+```{r 1 TTT 10 rep}
 data_10_rep |>
-  filter(symmetry & equal.DNA.bind & constant.background) |>
+filter(symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_4,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -416,34 +468,41 @@ data_10_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: All Technical Conditions Met")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTT-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../png_outputs/TTT-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### FTT Panels
 
-```{r 2 FTT for 4 and 10 rep}
+```{r 2 FTT 4 rep}
 data_4_rep |>
-  filter(!symmetry & equal.DNA.bind & constant.background) |>
+ filter(!symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
@@ -457,30 +516,38 @@ data_4_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: Asymmetric Differential DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/FTT-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
-
+ggsave("../png_outputs/FTT-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+```
+```{r 2 FTT 10 rep}
 data_10_rep |>
-  filter(!symmetry & equal.DNA.bind & constant.background) |>
+ filter(!symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
@@ -494,35 +561,43 @@ data_10_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: Asymmetric Differential DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
 
-ggsave("../png_outputs/FTT-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../png_outputs/FTT-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
+
 
 ### TFT Panels
 
-```{r 3 TFT for 4 and 10 rep}
+```{r 3 TFT 4 rep}
 data_4_rep |>
-  filter(symmetry & !equal.DNA.bind & constant.background) |>
+ filter(symmetry & !equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
@@ -536,30 +611,38 @@ data_4_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: Unequal Total DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TFT-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
-
+ggsave("../png_outputs/TFT-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+```
+```{r 3 TFT 10 rep}
 data_10_rep |>
-  filter(symmetry & !equal.DNA.bind & constant.background) |>
+ filter(symmetry & !equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
@@ -573,34 +656,43 @@ data_10_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: Unequal Total DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TFT-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+
+ggsave("../png_outputs/TFT-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
+
 
 ### TTF Panels
 
-```{r 4 TTF for 4 and 10 rep}
+```{r 4 TTF 4 rep}
 data_4_rep |>
-  filter(symmetry & equal.DNA.bind & !constant.background) |>
+ filter(symmetry & equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
@@ -614,30 +706,39 @@ data_4_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: Unequal Background Binding")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTF-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../png_outputs/TTF-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+```
 
+```{r 4 TTF 10 rep}
 data_10_rep |>
-  filter(symmetry & equal.DNA.bind & !constant.background) |>
+ filter(symmetry & equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
@@ -651,28 +752,37 @@ data_10_rep |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
     metric == "avg_FDR" ~ "Average FDR",
-    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle",
+    metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
-  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio,\nRelative to the Oracle", after = Inf)) |>
+  mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle", after = Inf)) |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
-  geom_hline(data = thresholds, aes(yintercept = yint))+
-  geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
+  geom_point(aes(color = technique, shape = technique), size = 1.5)+
+  geom_line(aes(color = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
+  ggtitle("Simulation Results: Unequal Background Binding")+
   theme_bw()+
   theme(text = element_text(color = "black"),
-        axis.text = element_text(color = "black"),
-        legend.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"),
-        axis.title = element_text(face = "bold"))
+        axis.text = element_text(color = "black", size = 14),
+        legend.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "bold", size = 14),
+        panel.background = element_rect(color = "black"),
+        legend.key = element_blank(),
+        strip.background = element_rect(color = "black"),
+        strip.text = element_text(color = "black", size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTF-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+
+ggsave("../png_outputs/TTF-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
+
 
 ### FFT Panels
 
