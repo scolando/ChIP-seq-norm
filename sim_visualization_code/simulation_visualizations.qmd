@@ -97,7 +97,7 @@ thresholds <- data.frame(metric = c("Average FDR","Average Power",
 
 ## Overall Average False Discovery Rate and Power
 
-## Average False Discovery Rate
+### Average False Discovery Rate
 
 ```{r all FDR -- 10 rep}
 data_10_rep |>
