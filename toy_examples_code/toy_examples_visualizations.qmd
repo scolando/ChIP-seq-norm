@@ -356,7 +356,10 @@ means_symmF_backF_DNAF$mu |>
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
         legend.position = 'none',
         axis.title = element_text(face = 'bold', color = 'black', size = 14),
-        strip.text = element_text(face = 'bold', color = 'black', size = 14))
+        strip.text = element_text(face = 'bold', color = 'black', size = 14),
+        panel.spacing = unit(0, "pt")) 
+
+ggsave('./pdf_outputs/spikein.pdf', width = 8.5, height = 4)
 ```
 
 # Extra Toy Examples 
