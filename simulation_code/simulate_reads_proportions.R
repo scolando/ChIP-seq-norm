@@ -48,7 +48,7 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   it <- iters
   dir.create(paste0("./sim_folder_",it,"_do_",prop.do,"/"))
   
-  dispersion <- 1/prior.df # For the sake of possible flexibility later; right now, it just cancels out.
+  dispersion <- 1/prior.df # for the sake of possible flexibility later; right now, it just cancels out.
   disp <- prior.df*dispersion/rchisq(npeaks, df = prior.df)
   
   grouping <- c(rep("A", replicates), rep("B", replicates))
@@ -67,7 +67,7 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
                                     rep(0.7, sum(grouping == "B")))
   }
   
-  ## determining how many peaks will have differential DNA occupancy
+  ## setting how many peaks will have differential DNA occupancy
   ndo <- prop.do*npeaks
   
   if(symmetry & equal.DNA.bind){
@@ -85,36 +85,34 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
     up.B <- floor((ndo/8)+1):ndo
     fc.up.A <- 8 
     fc.up.B <- 2 
-  }else{ #both FALSE
+  }else{ #asymmetric and different total DNA occupancy
     up.A <- 1:(ndo/8) 
     up.B <- floor((ndo/8)+1):ndo
     fc.up.A <- 2 
     fc.up.B <- 2 
   }
   
-  ## creating log2 fc vector for convenience later on
+  ## creating log2 fold change vector for convenience later on
   fc_vec <- rep(0, times = npeaks)
   fc_vec[up.A] <- log(fc.up.A, base = 2) - 0
   fc_vec[up.B] <- 0 - log(fc.up.B, base = 2)
   
   
-  ####################################SIMULATING READS#####################################
+  ####################################SIMULATING READS#######################################
   
   ## Single chromosome, for convenience.
   distances<-round(runif(npeaks, 10000, 20000))
   pos.1 <- cumsum(distances)	
   sizes <- c(chrA = max(pos.1) + 10000) # a single number that represents length of the chromosome
-  chrs <- rep("chrA", npeaks) # simulating all peaks on one chromosome
+  chrs <- rep("chrA", npeaks) # simulating all peaks on one chromosome for simplicity
   
   fnames<-list()
-  
-  #mu.used.total.A <- c()
-  #mu.used.total.B <- c()
-  
   basesums <- c()
   
-  ## given we want the baseline props to retain the correct fc, we use the minimum library size to define base.mu and cur.mu 
-  ## using the minimum library size allows for greater variability in cur.mu and thus baseline props, holding base.mu.jitter constant
+  ## given we want the baseline props to retain the correct fc,
+  # we use the minimum library size to define base.mu and cur.mu 
+  ## using the minimum library size allows for greater variability in cur.mu
+  #and thus baseline props, holding base.mu.jitter constant
   
   base.mu <- min(expected.lib.size)/npeaks
   
@@ -124,12 +122,12 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
     cur.mu_input <- (base.mu-base.mu.jitter):(base.mu+base.mu.jitter)
   }
   
-  cur.mu <- sample(cur.mu_input, npeaks, replace = TRUE) #sample npeaks times
+  cur.mu <- sample(cur.mu_input, npeaks, replace = TRUE) # samples npeaks times
   
-## iterating through the .sam files to generate read counts in the peak regions  
+  ## iterating through the .sam files to generate read counts in the peak regions  
   
   for (lib in 1:length(grouping)) {
-    baseline_props <- cur.mu/sum(cur.mu) #resetting so we aren't writing over the already edited proportions 
+    baseline_props <- cur.mu/sum(cur.mu) #resetting so we don't write over the already edited proportions 
     
     fname <- paste0("./sim_folder_", it, "_do_", prop.do,"/tf_out_", lib,"_sim_",it,"_do_",prop.do,"_cond", grouping[lib],".sam")
     
@@ -144,13 +142,12 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
       xscss::peakFile(fname, chrs=chrs, pos=pos.1, mu=mu.used.A, disp=disp,
                       sizes=sizes, fraglen=fraglen, width=true.width, tf=TRUE)
       
-      #mu.used.total.A <- cbind(mu.used.total.A, mu.used.A)
-      
     } else { #this is for grouping B
       baseline_props[up.B] <- fc.up.B*baseline_props[up.B]
 
       # need basesum_B to calculate the oracle size factor
-      # to allow for correct normalization even with different library sizes, we multiply by the ratio of the expected library sizes 
+      # to allow for correct normalization even with different library sizes,
+      #we multiply by the ratio of the expected library sizes 
       # when equal.library.size = TRUE, this ratio is just 1, so basesums[lib] = sum(baseline_props)
       
       basesums[lib] <- sum(baseline_props)*(expected.lib.size[grouping == "A"][1]/expected.lib.size[lib]) # lib corresponds to grouping == "B"
@@ -159,8 +156,6 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
       
       xscss::peakFile(fname, chrs=chrs, pos=pos.1, mu=mu.used.B, disp=disp,
                       sizes=sizes, fraglen=fraglen, width=true.width, tf=TRUE)
-      
-      #mu.used.total.B <- cbind(mu.used.total.B, mu.used.B)
       
     }
     
@@ -180,7 +175,7 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   
   fnames<-unlist(fnames)
   
-  ####################################ADDING BACKGROUND BINDING#####################################
+  ####################################ADDING BACKGROUND BINDING########################################
   
   
   if (constant.background){
@@ -203,12 +198,12 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
     
   }else{
     
-## one possibility is randomly choosing which sample has more background binding
-## do so, we could use the following code:  
+  ## one possibility is randomly choosing which sample has more background binding
+  ## do so, we use the following code:  
     
     more.background.cond <- sample(c("A", "B"), 1)
     
-## to hold constant, like we had in earlier versions of code set:
+  ## to hold constant, like we had in earlier versions of code set:
     
     #more.background.cond <- "B"
     
@@ -232,7 +227,7 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   
   ####################################CONVERTING TO .BAM FILES#####################################
   
-  bam.files<-crunch2BAM(fnames, dir = paste0("./sim_folder_", it,"_do_",prop.do,"/"))
+  bam.files <- xscss::crunch2BAM(fnames, dir = paste0("./sim_folder_", it,"_do_",prop.do,"/"))
   unlink(fnames)
   
   lfile <- paste0("./sim_folder_",it,"_do_",prop.do,"/tf_log_sim_",it,"_do_",prop.do,".txt")
@@ -256,7 +251,7 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   macs2_script <- paste('sh macs2.sh ', it, prop.do)
   system(macs2_script)
   
-  ####################################CLEAN UP#####################################
+  ####################################CLEAN UP###################################################
   
   narrowpeaks_files <- vector(length = length(grouping)) 
   
