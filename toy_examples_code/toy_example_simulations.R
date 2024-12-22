@@ -8,7 +8,6 @@
 # require(psych)
 # require(truncnorm) 
 
-# iters: integer; the iteration number used to index folders and files
 # prop.do: numeric; proportion of peaks that have differential DNA occupancy across A and B
 # symmetry: logical; indicates whether the same proportion of peaks have more DNA occupancy across A and B
 # constant.background: logical; indicates whether the background binding **between** A and B for the same genomic region is constant
@@ -16,12 +15,8 @@
 # equal.lib.size: library size is equal across the two experimental states in the called regions
 #      TRUE = 600,000, FALSE = 1,032,000 for A and 602,000 for B 
 #      logic: keep above 600,000 so that the peak reads are substantially above the background reads
-# replicates: integer; the number of .bam files generated within each experimental state (i.e., for A and B)
-# fraglen: integer; half of the width of the peak
 # npeaks: integer; number of simulated peaks in each replicate (some of which have differential DNA occupancy, some of which don't)
 # prior.df: integer; connected to dispersion, used in calculating reads from means using negative binomial distribution
-# true.width: artifact of original simulation code created by Lun and Smyth (2016)
-#      parameter is only relevant in their histone marker simulation -- however, we are simulating transcription factors
 # base.mu.jitter: integer; when sampling the base mu values, we `sample(c(base.mu_A-base.mu.jitter,base.mu_A+base.mu.jitter),npeaks, replace = TRUE)`
 # back.const.down and back.const.up: numeric; multiplicative factors (on base.mu) to set the range
 #      of background noise across the two experimental states
@@ -32,10 +27,8 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
                            equal.DNA.bind = TRUE,
                            constant.background = TRUE,
                            equal.lib.size = TRUE,
-                           replicates = 1,
-                           fraglen = 100, true.width = 500,
                            npeaks = 20000, prior.df = 50, 
-                           base.mu.jitter = 5, back.const.down = 0.33,
+                           base.mu.jitter = 0, back.const.down = 0.33,
                            back.const.up = 0.67, back.vary.down = 0,
                            back.vary.up = 0.20)
   
@@ -43,17 +36,13 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
   
   ####################################SETUP#####################################
   
-  dispersion <- 1/prior.df # for the sake of possible flexibility later; right now, it just cancels out.
+  dispersion <- 1/prior.df
   disp <- prior.df*dispersion/rchisq(npeaks, df = prior.df)
   
-  grouping <- c(rep("A", replicates), rep("B", replicates))
-  
-  radius <- fraglen
+  grouping <- c("A", "B")
   
   ## setting sequencing depth
   sizeRatio <- truncnorm::rtruncnorm(length(grouping), a = 0.6, b = 1.4, mean = 1, sd = 0.2)
-  
-  ## setting the expected library size for each replicate
   
   if(equal.lib.size){
     expected.lib.size <- rep(600000, length(grouping)) 
@@ -95,8 +84,6 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
   sizes <- c(chrA = max(pos.1) + 10000) # a single number that represents length of the chromosome
   chrs <- rep("chrA", npeaks) # simulating all peaks on one chromosome for simplicity
   
-  basesums <- c()
-  
   ## given we want the baseline props to retain the correct fc,
   # we use the minimum library size to define base.mu and cur.mu 
   ## using the minimum library size allows for greater variability in cur.mu
@@ -110,7 +97,7 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
     cur.mu_input <- (base.mu-base.mu.jitter):(base.mu+base.mu.jitter)
   }
   
-  cur.mu <- sample(cur.mu_input, npeaks, replace = TRUE) # samples npeaks times
+  cur.mu <- sample(cur.mu_input, npeaks, replace = TRUE)
   
   ####################################################################################################
   mu_A_df <- data.frame(peak_index = c(), position = c(), mu_A = c())
@@ -118,13 +105,11 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
   
   
   for (lib in 1:length(grouping)) {
-    baseline_props <- cur.mu/sum(cur.mu) #resetting so we don't write over the already edited proportions 
+    baseline_props <- cur.mu/sum(cur.mu)
     
     if (grouping[lib] == "A") { 
       baseline_props[up.A] <- fc.up.A*baseline_props[up.A]
       
-      # need basesum_A to calculate the oracle size factor
-      basesums[lib] <- sum(baseline_props)
       prop.mu_A <- baseline_props / sum(baseline_props)
       mu.used.A <- prop.mu_A * expected.lib.size[lib] * sizeRatio[lib]
       
@@ -133,12 +118,6 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
     } else { #this is for grouping B
       baseline_props[up.B] <- fc.up.B*baseline_props[up.B]
       
-      # need basesum_B to calculate the oracle size factor
-      # to allow for correct normalization even with different library sizes,
-      #we multiply by the ratio of the expected library sizes 
-      # when equal.library.size = TRUE, this ratio is just 1, so basesums[lib] = sum(baseline_props)
-      
-      basesums[lib] <- sum(baseline_props)*(expected.lib.size[grouping == "A"][1]/expected.lib.size[lib]) # lib corresponds to grouping == "B"
       prop.mu_B <- baseline_props / sum(baseline_props)
       mu.used.B <- prop.mu_B * expected.lib.size[lib] * sizeRatio[lib]
       
@@ -169,25 +148,14 @@ simulate_means <- function(prop.do = 0.05, symmetry = TRUE,
     
   }
   
-    bmu.A <- runif(nbins, background.mu[1], background.mu[2])
-    bmu.B <- bmu.A + runif(nbins, background.added[1], background.added[2])
+  bmu.A <- runif(nbins, background.mu[1], background.mu[2])
+  bmu.B <- bmu.A + runif(nbins, background.added[1], background.added[2])
 
-    #if(constant.background){
-     # bmu.A <- bmu.B <- runif(nbins, back.mu.A[1], back.mu.A[1])
-   # } else {
-     # bmu.A <- runif(nbins, back.mu.A[1], back.mu.A[1])
-      #bmu.B <- bmu.A - mean(bmu.A) + runif(nbins, back.mu.B[1], back.mu.B[2])
-     # bmu.B <- bmu.A + runif(nbins, back.mu.B[2], back.mu.B[2])
-   # }
-
-  
-  pos.up.A <- pos.1[up.A]
-  pos.up.B <- pos.1[up.B]
   pos.back.bin <- seq(width/2, sizes - width/2, by = width)
   
-  back_used_df <- data.frame(back_A = bmu.A, back_B = bmu.B, back.pos = pos.back.bin)
+  simulation_back_df <- data.frame(back_A = bmu.A, back_B = bmu.B, back_pos = pos.back.bin)
   
-  return(list(back = back_used_df, mu = simulation_mu_df))
+  return(list(back = simulation_back_df, mu = simulation_mu_df))
   
   }
 

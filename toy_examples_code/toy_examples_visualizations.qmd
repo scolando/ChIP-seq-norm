@@ -13,6 +13,7 @@ knitr:
 ---
 
 ```{r setup, include=FALSE}
+# packages
 require(tidyverse) #for data wrangling
 require(xscss) #for simulation functions
 # Instructions for downloading xscss: https://bioinf.wehi.edu.au/csaw/
@@ -25,27 +26,26 @@ require(truncnorm) #for truncated normal distribution
 require(MAnorm2) #for MAnorm2 normalization functions
 require(DiffBind) #bulk norm functions + DB analysis, BiocManager::install('DiffBind')
 require(fuzzyjoin) #for joining truth to simulated data results
+
+# source file for toy example simulations
+source('toy_example_simulations.R')
 ```
 
 
 ```{r simulate parameters}
-source('toy_example_simulations.R')
-
 back.const.down <- 0.2
 back.const.up <- 0.4
 back.vary.down <- 0
-back.vary.up <- 0.4  # was 0.1 for simulation, made it bigger for clarity in toy examples
-# CHECK WHAT WE DO IN ACTUAL SIMULATIONS
+back.vary.up <- 0.4  # was 0.2 for actual simulations but made it bigger for clarity in the toy examples
 ```
 
 ```{r mean simulations}
-means_symmT_backT_DNAT <- simulate_means(prop.do = 0.05, replicates = 1,
-                                         symmetry = TRUE,
+means_symmT_backT_DNAT <- simulate_means(prop.do = 0.05, symmetry = TRUE,
                                          equal.DNA.bind = TRUE,
                                          constant.background = TRUE,
                                          equal.lib.size = TRUE,
-                                         fraglen = 100, npeaks = 20000,
-                                         prior.df = 50, true.width = 500,
+                                         npeaks = 20000,
+                                         prior.df = 50,
                                          base.mu.jitter = 0, 
                                          back.const.down = back.const.down,
                                          back.const.up = back.const.up, 
@@ -56,8 +56,8 @@ means_symmT_backT_DNAF <- simulate_means(prop.do = 0.05, symmetry = TRUE,
                                        equal.DNA.bind = FALSE,
                                        constant.background = TRUE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -68,8 +68,8 @@ means_symmF_backF_DNAT <- simulate_means(prop.do = 0.05, symmetry = FALSE,
                                        equal.DNA.bind = TRUE,
                                        constant.background = FALSE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -80,8 +80,8 @@ means_symmF_backT_DNAT <- simulate_means(prop.do = 0.05, symmetry = FALSE,
                                        equal.DNA.bind = TRUE,
                                        constant.background = TRUE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -92,8 +92,8 @@ means_symmT_backF_DNAT <- simulate_means(prop.do = 0.05, symmetry = TRUE,
                                        equal.DNA.bind = TRUE,
                                        constant.background = FALSE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -104,8 +104,8 @@ means_symmF_backT_DNAF <- simulate_means(prop.do = 0.05, symmetry = FALSE,
                                        equal.DNA.bind = FALSE,
                                        constant.background = TRUE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -116,8 +116,8 @@ means_symmT_backF_DNAF <- simulate_means(prop.do = 0.05, symmetry = TRUE,
                                        equal.DNA.bind = FALSE,
                                        constant.background = FALSE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -128,8 +128,8 @@ means_symmF_backF_DNAF <- simulate_means(prop.do = 0.05, symmetry = FALSE,
                                        equal.DNA.bind = FALSE,
                                        constant.background = FALSE,
                                        equal.lib.size = TRUE,
-                                       fraglen = 100, npeaks = 20000,
-                                       prior.df = 50, true.width = 500,
+                                       npeaks = 20000,
+                                       prior.df = 50,
                                        base.mu.jitter = 0, 
                                        back.const.down = back.const.down,
                                        back.const.up = back.const.up, 
@@ -142,7 +142,9 @@ means_symmF_backF_DNAF <- simulate_means(prop.do = 0.05, symmetry = FALSE,
 ## Symmetric, constant background, same DNA occupancy
 
 ```{r}
+# seed setting for simulations
 set.seed(471)
+
 x19_location <- runif(29, 0 , 10000)
 x19_location[1:9] <- sort(x19_location[1:9])
 x19_location[4:9] <- sort(x19_location[4:9], decreasing = TRUE)
@@ -156,9 +158,9 @@ means_symmT_backT_DNAT$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmT_backT_DNAT$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x19_location = x19_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',3), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
@@ -173,6 +175,7 @@ means_symmT_backT_DNAT$mu |>
   facet_grid(group ~ .) + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'All Technical Conditions Met') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -198,9 +201,9 @@ means_symmT_backT_DNAF$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmT_backT_DNAF$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x19_location = x19_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',3), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
@@ -215,6 +218,7 @@ means_symmT_backT_DNAF$mu |>
   facet_grid(group ~ .) + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'Unequal Total DNA Occupancy')+ 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -242,9 +246,9 @@ means_symmF_backT_DNAT$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmF_backT_DNAT$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
     
   mutate(x_location = x_location) |>
@@ -260,6 +264,7 @@ means_symmF_backT_DNAT$mu |>
   facet_grid(group ~ .) + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'Asymmetric Differential Occupancy') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -285,9 +290,9 @@ means_symmT_backF_DNAT$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmT_backF_DNAT$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x19_location = x19_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',3), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
@@ -302,6 +307,7 @@ means_symmT_backF_DNAT$mu |>
   facet_grid(group ~ .) + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'Unequal Background Binding') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -328,9 +334,9 @@ means_symmF_backF_DNAF$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmF_backF_DNAF$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x_location = x_location) |>
   cbind(spikein_A = runif(27, max = 3, min = 1)) |>
@@ -351,6 +357,7 @@ means_symmF_backF_DNAF$mu |>
   facet_grid(group ~ spikein_logical, scales = 'free_x') + 
   labs(x = 'Genome Location', y = 'Number of Reads') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = FALSE) +
+  scale_x_continuous(expand = c(0,0, 0.05, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -375,9 +382,9 @@ means_symmF_backT_DNAF$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmF_backT_DNAF$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x_location = x_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',1), rep('more DNA occupancy in B', 3), rep('not diff DNA Occupancy', 3),
@@ -393,6 +400,7 @@ means_symmF_backT_DNAF$mu |>
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Asymmetric, different DNA-protein binding / cell, \nconstant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -417,9 +425,9 @@ means_symmF_backF_DNAT$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmF_backF_DNAT$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x_location = x_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',1), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
@@ -435,6 +443,7 @@ means_symmF_backF_DNAT$mu |>
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Asymmetric, same DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -459,9 +468,9 @@ means_symmT_backF_DNAF$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmT_backF_DNAF$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x19_location = x19_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',3), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
@@ -477,6 +486,7 @@ means_symmT_backF_DNAF$mu |>
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Symmetric, different DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -501,9 +511,9 @@ means_symmF_backF_DNAF$mu |>
         dplyr::rename(
           sample_n(
             filter(means_symmF_backF_DNAF$back, 
-                   back.pos < 29871606), 
+                   back_pos < 29871606), 
             nback),
-        mu_A = back_A, mu_B = back_B, position = back.pos),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
         type = rep('background', nback))) |>
   mutate(x_location = x_location) |>
   mutate(Truth = c(rep('more DNA occupancy in A',1), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
@@ -519,6 +529,7 @@ means_symmF_backF_DNAF$mu |>
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Asymmetric, different DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
   theme_classic() + 
   theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_blank(), axis.ticks.y = element_blank(),
@@ -530,3 +541,80 @@ means_symmF_backF_DNAF$mu |>
 
 ggsave('./pdf_outputs/FFF_means.pdf', width = 8.5, height = 4)
 ```
+
+```{r}
+binding_df <- means_symmF_backF_DNAF$mu |>
+  select(peak_index, mu_A, mu_B, position) |>
+  filter(peak_index %in% c(1, 501:503, 2000:2002)) |>
+  mutate(type = rep('mean', length(c(1, 501:503, 2000:2002)))) |>
+  rbind(data.frame(peak_index = rep(NA, nback), 
+        dplyr::rename(
+          sample_n(
+            filter(means_symmF_backF_DNAF$back, 
+                   back_pos < 29871606), 
+            nback),
+        mu_A = back_A, mu_B = back_B, position = back_pos),
+        type = rep('background', nback))) |>
+  mutate(x_location = x_location) |>
+  mutate(Truth = c(rep('more DNA occupancy in A',1), rep('more DNA occupancy in B', 3), rep('no diff DNA occupancy', 3),
+                   rep('background', nback))) |>
+  dplyr::rename(`State A` = mu_A, `State B` = mu_B) |>
+  pivot_longer(cols = `State A`:`State B`, names_to = 'group', values_to = 'DNA_binding') |>
+  mutate(DNA_binding = ifelse(type == 'mean', DNA_binding, DNA_binding/10)) |>
+  mutate(region_width = ifelse(type == 'mean', 1, 10)) |>
+  uncount(round(DNA_binding))
+  
+peak_cutoffs <- binding_df |>
+  filter(Truth != 'background') |>
+  group_by(peak_index) |>
+  summarize(x_location = min(x_location))
+  
+binding_df |>
+  ggplot(aes(x = x_location, fill = Truth)) +
+  geom_rect(aes(xmin = x_location - 200, xmax = x_location + 200, ymin = -Inf, ymax = Inf),
+            fill = '#ffe59953', data = peak_cutoffs)+
+  stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
+  geom_vline(aes(xintercept = x_location - 200), data = peak_cutoffs) +
+  geom_vline(aes(xintercept = x_location + 200), data = peak_cutoffs) +
+  facet_grid(group ~ .) + 
+  labs(x = 'Genome Location', y = 'DNA Binding',
+       title = 'Reads in Peaks Normalization Unit') + 
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
+  theme_classic() + 
+  theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        axis.title = element_text(face = 'bold', color = 'black', size = 14),
+        strip.text = element_text(face = 'bold', color = 'black', size = 14),
+        legend.title = element_text(face = 'bold', color = 'black', size = 14),
+        legend.text = element_text(color = 'black', size = 12),
+        panel.spacing = unit(0, "pt")) 
+
+ggsave('./pdf_outputs/Reads_in_Peaks_norm_unit.pdf', width = 8.5, height = 4)
+```
+
+```{r}
+background_bin_markers <-data.frame(x_location = seq(min(binding_df$x_location), max(binding_df$x_location), by = 2000))
+
+binding_df |>
+  ggplot(aes(x = x_location, fill = Truth)) +
+  geom_vline(aes(xintercept = x_location), data = background_bin_markers)+
+  stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
+  facet_grid(group ~ .) + 
+  labs(x = 'Genome Location', y = 'DNA Binding',
+       title = 'Background Bin Normalization Unit') + 
+  grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
+  scale_x_continuous(expand = c(0,0, 0, 0))+
+  theme_classic() + 
+  theme(axis.text.x=element_blank(), axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        axis.title = element_text(face = 'bold', color = 'black', size = 14),
+        strip.text = element_text(face = 'bold', color = 'black', size = 14),
+        legend.title = element_text(face = 'bold', color = 'black', size = 14),
+        legend.text = element_text(color = 'black', size = 12),
+        panel.background = element_rect(fill = '#ffe59953'),
+        panel.spacing = unit(0, "pt")) 
+
+ggsave('./pdf_outputs/background_bin_norm_unit.pdf', width = 8.5, height = 4)
+```
+

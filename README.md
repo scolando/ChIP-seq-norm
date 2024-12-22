@@ -9,7 +9,9 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 3.  The **experiment_code** folder contains the code to conduct PCA on experimental CUT&RUN data, which is from the paper "Genomic Occupancy of the Bromodomain Protein Bdf3 Is Dynamic during Differentiation of African Trypanosomes from Bloodstream to Procyclic Forms" by Ashby et al. (2023). *The Fastq files for RNA-seq used in this paper are available from the NCBI SRA under accession number [PRJNA924324](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA924324).*
 
-4.  The **png_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
+4. The **toy_examples_code** folder contains the code to create the toy examples which appear in the paper as well as the toy example pdf outputs.
+
+5.  The **png_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
 
 
 ## Files in simulation_code Folder
