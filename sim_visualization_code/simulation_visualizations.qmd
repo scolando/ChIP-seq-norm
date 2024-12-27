@@ -821,7 +821,7 @@ data_4_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -859,7 +859,7 @@ data_10_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -902,7 +902,7 @@ data_4_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -940,7 +940,7 @@ data_10_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -982,7 +982,7 @@ data_4_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -1020,7 +1020,7 @@ data_10_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -1062,7 +1062,7 @@ data_4_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
