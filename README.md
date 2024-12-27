@@ -11,7 +11,7 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 4. The **toy_examples_code** folder contains the code to create the toy examples which appear in the paper as well as the toy example pdf outputs.
 
-5.  The **png_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
+5.  The **visualization_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
 
 
 ## Files in simulation_code Folder

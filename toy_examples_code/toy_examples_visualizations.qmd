@@ -33,8 +33,8 @@ source('toy_example_simulations.R')
 
 
 ```{r simulate parameters}
-back.const.down <- 0.2
-back.const.up <- 0.4
+back.const.down <- 0.5
+back.const.up <- 0.9
 back.vary.down <- 0
 back.vary.up <- 0.4  # was 0.2 for actual simulations but made it bigger for clarity in the toy examples
 ```

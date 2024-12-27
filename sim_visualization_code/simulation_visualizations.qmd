@@ -126,7 +126,7 @@ data_10_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/all_FDR_10_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_FDR_10_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r all FDR -- 4 rep}
@@ -155,7 +155,7 @@ data_4_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/all_FDR_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_FDR_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 ### Average Power
 
@@ -187,7 +187,7 @@ data_10_rep  |>
         legend.text = element_text(size = 14))
 
 
-ggsave("../png_outputs/all_power_10_rep.png", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_power_10_rep.pdf", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
 ```
 
 
@@ -218,7 +218,7 @@ data_4_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/all_power_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_power_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ### Average Absolute Size Factor Ratio, Relative to the Oracle Data
@@ -311,7 +311,7 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTT-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTT-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ```{r 1 TTT 10 rep}
@@ -357,7 +357,7 @@ filter(symmetry & equal.DNA.bind & constant.background) |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTT-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTT-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### FTT Panels
@@ -405,7 +405,7 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/FTT-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/FTT-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ```{r 2 FTT 10 rep}
@@ -452,7 +452,7 @@ data_10_rep |>
         plot.title = element_text(size = 18))
 
 
-ggsave("../png_outputs/FTT-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/FTT-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### TFT Panels
@@ -500,7 +500,7 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TFT-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TFT-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ```{r 3 TFT 10 rep}
@@ -547,7 +547,7 @@ data_10_rep |>
         plot.title = element_text(size = 18))
 
 
-ggsave("../png_outputs/TFT-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TFT-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### TTF Panels
@@ -595,7 +595,7 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../png_outputs/TTF-4-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTF-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ```{r 4 TTF 10 rep}
@@ -642,7 +642,7 @@ data_10_rep |>
         plot.title = element_text(size = 18))
 
 
-ggsave("../png_outputs/TTF-10-rep.png", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTF-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 
@@ -681,7 +681,7 @@ data_10_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/CI_FDR_10_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_FDR_10_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r CI power -- 10 rep}
@@ -718,7 +718,7 @@ data_10_rep  |>
         legend.text = element_text(size = 14))
 
 
-ggsave("../png_outputs/CI_power_10_rep.png", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_power_10_rep.pdf", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
 ```
 
 ```{r CI FDR -- 4 rep}
@@ -752,7 +752,7 @@ data_4_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/CI_FDR_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_FDR_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ```{r CI power -- 4 rep}
@@ -788,7 +788,7 @@ data_4_rep  |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../png_outputs/CI_power_4_rep.png", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_power_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ## Additional Results Panels
@@ -823,7 +823,8 @@ data_4_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -834,7 +835,7 @@ data_4_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/FFT-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFT-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 data_10_rep |>
   filter(!symmetry & !equal.DNA.bind & constant.background) |>
@@ -860,7 +861,8 @@ data_10_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -871,7 +873,7 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/FFT-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFT-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 ```
 
@@ -902,7 +904,8 @@ data_4_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -913,7 +916,7 @@ data_4_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/FTF-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FTF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 data_10_rep |>
   filter(!symmetry & equal.DNA.bind & !constant.background) |>
@@ -939,7 +942,8 @@ data_10_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -950,7 +954,7 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/FTF-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FTF-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 ```
 
 ### TFF Panels
@@ -980,7 +984,8 @@ data_4_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -991,7 +996,7 @@ data_4_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/TFF-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5)
+ggsave("../visualization_outputs/TFF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5)
 
 data_10_rep |>
   filter(symmetry & !equal.DNA.bind & !constant.background) |>
@@ -1017,7 +1022,8 @@ data_10_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -1028,7 +1034,7 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/TFF-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/TFF-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 ```
 
 ### FFF Panels
@@ -1058,7 +1064,8 @@ data_4_rep |>
   geom_point(size = 0.5)+
   geom_line(aes(linetype = technique))+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          linetype = guide_legend(title = "Technique"))+
@@ -1069,7 +1076,7 @@ data_4_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/FFF-4-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 data_10_rep |>
   filter(!symmetry & !equal.DNA.bind & !constant.background) |>
@@ -1093,12 +1100,13 @@ data_10_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint))+
   geom_point(size = 0.5)+
-  geom_line(aes(linetype = technique))+
+  geom_line()+
   facet_wrap(~metric, scales = "free")+
-  grafify::scale_color_grafify(palette = "bright", ColSeq = FALSE, reverse = FALSE)+
+  grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
+  scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         linetype = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
         axis.text = element_text(color = "black"),
@@ -1106,6 +1114,6 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/FFF-10-rep.png", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFF-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 ```
