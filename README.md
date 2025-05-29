@@ -1,9 +1,9 @@
 
-# ChIP-Seq-norm
+# ChIP-seq-norm
 
-Repository with code associated with the paper, "Selecting ChIP-Seq Normalization Methods from the Perspective of their Technical Conditions"
+Repository with code associated with the paper, "Selecting ChIP-seq Normalization Methods from the Perspective of their Technical Conditions"
 
-1.  The **simulation_code** folder contains the code to simulate the ChIP-Seq read counts and conduct downstream normalization and differential binding analysis (dba) using MAnorm2 an DiffBind. *A brief description of the files within the simulation_code folder can be found below*.
+1.  The **simulation_code** folder contains the code to simulate the ChIP-seq read counts and conduct downstream normalization and differential binding analysis (dba) using MAnorm2 an DiffBind. *A brief description of the files within the simulation_code folder can be found below*.
 
 2.  The **sim_visualization_code** folder contains the code to analyze the outputted .csvs from the simulated data, comparing average false discovery rate, power, and absolute size factor ratios across our eight distinct simulation conditions.
 
@@ -11,7 +11,7 @@ Repository with code associated with the paper, "Selecting ChIP-Seq Normalizatio
 
 4. The **toy_examples_code** folder contains the code to create the toy examples which appear in the paper as well as the toy example pdf outputs.
 
-5.  The **visualization_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
+5. The **visualization_outputs** folder contains the visualizations created by analyzing the simulated and experimental data.
 
 
 ## Files in simulation_code Folder
