@@ -89,7 +89,7 @@ data_3_rep <- TTT_3_rep |>
 ```
 
 ```{r thresholds dataframe}
-thresholds <- data.frame(metric = c("Average FDR","Average Power", 
+thresholds <- data.frame(metric = c("Average Empirical FDR","Average Power", 
                                     "Average Absolute\nSize Factor Ratio\nRelative to the Oracle"),
                          yint = c(0.05, 1, 1)) |>
   mutate(metric = fct_relevel(metric, "Average Absolute\nSize Factor Ratio\nRelative to the Oracle"))
@@ -109,7 +109,7 @@ data_2_rep |>
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
   geom_line(aes(color = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
-  ylab("Average False Discovery Rate")+
+  ylab("Average Empirical FDR")+
   facet_grid(back ~ symm + dna)+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -131,7 +131,6 @@ ggsave("../visualization_outputs/all_FDR_2_rep.pdf", bg = "white", dpi = 1500, w
 
 ```{r all FDR -- 3 rep}
 data_3_rep |>
-  filter(technique != 'MAnorm2') |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_FDR))+
@@ -139,7 +138,7 @@ data_3_rep |>
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
   geom_line(aes(color = technique, linetype = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
-  ylab("Average False Discovery Rate")+
+  ylab("Average Empirical FDR")+
   facet_grid(back ~ symm + dna)+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -163,7 +162,6 @@ ggsave("../visualization_outputs/all_FDR_3_rep.pdf", bg = "white", dpi = 1500, w
 
 ```{r all power -- 2 rep}
 data_2_rep  |>
-  filter(technique != 'MAnorm2') |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_FDR))+
@@ -198,7 +196,7 @@ ggsave("../visualization_outputs/all_power_2_rep.pdf", bg = "white", dpi = 2000,
 data_3_rep |>
   filter(technique != 'MAnorm2') |>
   group_by(prop.do, technique, symm, dna, back) |>
-  summarize(avg_power = mean(true_positives/(true_positives + false_negatives), 
+  summarize(avg_power = mean(true_positives/(true_positives + false_negatives),
                              na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_power))+
   geom_hline(yintercept = 1, linetype = "dashed")+
@@ -274,7 +272,7 @@ sizefactors_rel_oracle_2 <- data_2_rep |>
 
 ### TTT Panels
 
-```{r 1 TTT 3 rep}
+```{r TTT 3 rep}
 data_3_rep |>
   filter(symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
@@ -289,7 +287,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -321,7 +319,7 @@ data_3_rep |>
 ggsave("../visualization_outputs/TTT-3-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
-```{r 1 TTT 2 rep}
+```{r TTT 2 rep}
 data_2_rep |>
 filter(symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
@@ -336,7 +334,7 @@ filter(symmetry & equal.DNA.bind & constant.background) |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -369,7 +367,7 @@ ggsave("../visualization_outputs/TTT-2-rep.pdf", bg = "white", dpi = 1500, width
 
 ### FTT Panels
 
-```{r 2 FTT 3 rep}
+```{r FTT 3 rep}
 data_3_rep |>
  filter(!symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
@@ -384,7 +382,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -392,13 +390,14 @@ data_3_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         shape = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   ggtitle("Simulation Results: Unbalanced Differential DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
@@ -430,7 +429,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -479,7 +478,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -487,13 +486,14 @@ data_3_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         shape = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   ggtitle("Simulation Results: Unequal Total DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
@@ -525,7 +525,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -574,7 +574,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -582,13 +582,14 @@ data_3_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         shape = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   ggtitle("Simulation Results: Unequal Background Binding")+
   theme_bw()+
   theme(text = element_text(color = "black"),
@@ -620,7 +621,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -820,7 +821,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -858,7 +859,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -901,7 +902,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -939,7 +940,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -981,7 +982,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -1019,7 +1020,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -1061,7 +1062,7 @@ data_3_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
@@ -1099,7 +1100,7 @@ data_2_rep |>
                names_to = "metric", values_to = "values") |>
   mutate(metric = case_when(
     metric == "avg_power" ~ "Average Power",
-    metric == "avg_FDR" ~ "Average FDR",
+    metric == "avg_FDR" ~ "Average Empirical FDR",
     metric == "mean_sizefactor_ratio_prop.do" ~ "Average Absolute\nSize Factor Ratio\nRelative to the Oracle",
     TRUE ~ metric
   )) |>
