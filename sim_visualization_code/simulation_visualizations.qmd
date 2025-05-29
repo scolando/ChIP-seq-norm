@@ -21,28 +21,28 @@ library(tidyverse)
 shape_palette <- c(16, 17, 15, 18, 3, 4, 8, 7, 9)
 
 
-TTT_10_rep <- read_csv("simulation_data/TTT_10_rep.csv")
-TTF_10_rep <- read_csv("simulation_data/TTF_10_rep.csv")
-FTT_10_rep <- read_csv("simulation_data/FTT_10_rep.csv")
-TFT_10_rep <- read_csv("simulation_data/TFT_10_rep.csv")
-FFT_10_rep <- read_csv("simulation_data/FFT_10_rep.csv")
-FTF_10_rep <- read_csv("simulation_data/FTF_10_rep.csv")
-TFF_10_rep <- read.csv("simulation_data/TFF_10_rep.csv")
-FFF_10_rep <- read.csv("simulation_data/FFF_10_rep.csv")
+TTT_2_rep <- read_csv("simulation_data/TTT_2_rep.csv")
+TTF_2_rep <- read_csv("simulation_data/TTF_2_rep.csv")
+FTT_2_rep <- read_csv("simulation_data/FTT_2_rep.csv")
+TFT_2_rep <- read_csv("simulation_data/TFT_2_rep.csv")
+FFT_2_rep <- read_csv("simulation_data/FFT_2_rep.csv")
+FTF_2_rep <- read_csv("simulation_data/FTF_2_rep.csv")
+TFF_2_rep <- read.csv("simulation_data/TFF_2_rep.csv")
+FFF_2_rep <- read.csv("simulation_data/FFF_2_rep.csv")
 
-TTT_4_rep <- read_csv("simulation_data/TTT_4_rep.csv")
-TTF_4_rep <- read_csv("simulation_data/TTF_4_rep.csv")
-FTT_4_rep <- read_csv("simulation_data/FTT_4_rep.csv")
-TFT_4_rep <- read_csv("simulation_data/TFT_4_rep.csv")
-TFF_4_rep <- read_csv("simulation_data/TFF_4_rep.csv")
-FTF_4_rep <- read_csv("simulation_data/FTF_4_rep.csv")
-FFT_4_rep <- read_csv("simulation_data/FFT_4_rep.csv")
-FFF_4_rep <- read_csv("simulation_data/FFF_4_rep.csv")
+TTT_3_rep <- read_csv("simulation_data/TTT_3_rep.csv")
+TTF_3_rep <- read_csv("simulation_data/TTF_3_rep.csv")
+FTT_3_rep <- read_csv("simulation_data/FTT_3_rep.csv")
+TFT_3_rep <- read_csv("simulation_data/TFT_3_rep.csv")
+TFF_3_rep <- read_csv("simulation_data/TFF_3_rep.csv")
+FTF_3_rep <- read_csv("simulation_data/FTF_3_rep.csv")
+FFT_3_rep <- read_csv("simulation_data/FFT_3_rep.csv")
+FFF_3_rep <- read_csv("simulation_data/FFF_3_rep.csv")
 ```
 
 ```{r combining and wrangling the data}
-data_10_rep <- TTT_10_rep |>
-  rbind(TTF_10_rep, FTT_10_rep, TFT_10_rep, FTF_10_rep, FFT_10_rep, TFF_10_rep, FFF_10_rep) |>
+data_2_rep <- TTT_2_rep |>
+  rbind(TTF_2_rep, FTT_2_rep, TFT_2_rep, FTF_2_rep, FFT_2_rep, TFF_2_rep, FFF_2_rep) |>
   mutate(technique = case_when(
     technique == "LIB_BINS" ~ "Library Size (Background Bins)",
     technique == "LIB_PEAKS" ~ "Library Size (Reads in Peaks)",
@@ -56,16 +56,16 @@ data_10_rep <- TTT_10_rep |>
   mutate(technique = fct_relevel(technique, "Loess Adjusted Fit (Reads in Peaks)", after = 8),
          technique = fct_relevel(technique, "MAnorm2", after = 8),
          technique = fct_relevel(technique, "Oracle"),
-         symm = if_else(symmetry == TRUE, "Symmetry",
-                        "Asymmetry"),
-         symm = fct_relevel(symm, "Symmetry"),
+         symm = if_else(symmetry == TRUE, "Balanced",
+                        "Unbalanced"),
+         symm = fct_relevel(symm, "Balanced"),
          dna = if_else(equal.DNA.bind == TRUE, "Equal Occupancy", 
                        "Unequal Occupancy"),
          back = if_else(constant.background == TRUE, "Equal Background",
                         "Unequal Background")) 
 
-data_4_rep <- TTT_4_rep |>
-  rbind(TTF_4_rep, FTT_4_rep, TFT_4_rep, FFT_4_rep, TFF_4_rep, FTF_4_rep, FFF_4_rep) |>
+data_3_rep <- TTT_3_rep |>
+  rbind(TTF_3_rep, FTT_3_rep, TFT_3_rep, FFT_3_rep, TFF_3_rep, FTF_3_rep, FFF_3_rep) |>
   mutate(technique = case_when(
     technique == "LIB_BINS" ~ "Library Size (Background Bins)",
     technique == "LIB_PEAKS" ~ "Library Size (Reads in Peaks)",
@@ -79,9 +79,9 @@ data_4_rep <- TTT_4_rep |>
   mutate(technique = fct_relevel(technique, "Loess Adjusted Fit (Reads in Peaks)", after = 8),
          technique = fct_relevel(technique, "MAnorm2", after = 8),
          technique = fct_relevel(technique, "Oracle"),
-         symm = if_else(symmetry == TRUE, "Symmetry",
-                        "Asymmetry"),
-         symm = fct_relevel(symm, "Symmetry"),
+         symm = if_else(symmetry == TRUE, "Balanced",
+                        "Unbalanced"),
+         symm = fct_relevel(symm, "Balanced"),
          dna = if_else(equal.DNA.bind == TRUE, "Equal Occupancy", 
                        "Unequal Occupancy"),
          back = if_else(constant.background == TRUE, "Equal Background",
@@ -99,8 +99,8 @@ thresholds <- data.frame(metric = c("Average FDR","Average Power",
 
 ### Average False Discovery Rate
 
-```{r all FDR -- 10 rep}
-data_10_rep |>
+```{r all FDR -- 2 rep}
+data_2_rep |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
   mutate(avg_FDR_jittered = jitter(avg_FDR)) |>
@@ -126,24 +126,26 @@ data_10_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../visualization_outputs/all_FDR_10_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_FDR_2_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
-```{r all FDR -- 4 rep}
-data_4_rep |>
+```{r all FDR -- 3 rep}
+data_3_rep |>
+  filter(technique != 'MAnorm2') |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_FDR))+
   geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average False Discovery Rate")+
   facet_grid(back ~ symm + dna)+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"),
-         shape = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
         axis.text = element_text(color = "black", size = 14),
@@ -155,26 +157,27 @@ data_4_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../visualization_outputs/all_FDR_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_FDR_3_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 ### Average Power
 
-```{r all power -- 10 rep}
-data_10_rep  |>
-  group_by(prop.do, technique, symm, dna, back) |>
-  summarize(avg_power = mean(true_positives/(true_positives + false_negatives), 
-                             na.rm = TRUE)) |>
-  ggplot(aes(x = prop.do, y = avg_power))+
-  geom_hline(yintercept = 1, linetype = "dashed")+
+```{r all power -- 2 rep}
+data_2_rep  |>
+  filter(technique != 'MAnorm2') |>
+  group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
+  summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
+  ggplot(aes(x = prop.do, y = avg_FDR))+
+  geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
-  ylab("Average Power")+
+  ylab("Average False Discovery Rate")+
   facet_grid(back ~ symm + dna)+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
-  guides(color = guide_legend(title = "Technique"), 
-         shape = guide_legend(title = "Technique"))+
+  guides(color = guide_legend(title = "Technique"),
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
         axis.text = element_text(color = "black", size = 14),
@@ -187,26 +190,28 @@ data_10_rep  |>
         legend.text = element_text(size = 14))
 
 
-ggsave("../visualization_outputs/all_power_10_rep.pdf", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_power_2_rep.pdf", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
 ```
 
 
-```{r all power -- 4 rep}
-data_4_rep |>
+```{r all power -- 3 rep}
+data_3_rep |>
+  filter(technique != 'MAnorm2') |>
   group_by(prop.do, technique, symm, dna, back) |>
   summarize(avg_power = mean(true_positives/(true_positives + false_negatives), 
                              na.rm = TRUE)) |>
   ggplot(aes(x = prop.do, y = avg_power))+
   geom_hline(yintercept = 1, linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
   ylab("Average Power")+
   facet_grid(back ~ symm + dna)+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
   guides(color = guide_legend(title = "Technique"), 
-         shape = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   theme_bw()+
   theme(text = element_text(color = "black"),
         axis.text = element_text(color = "black", size = 14),
@@ -218,32 +223,32 @@ data_4_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../visualization_outputs/all_power_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/all_power_3_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ### Average Absolute Size Factor Ratio, Relative to the Oracle Data
 
-```{r dataframe of the Oracle size factors -- 4 rep}
-Oracle_Final_4 <- data_4_rep |>
+```{r dataframe of the Oracle size factors -- 3 rep}
+Oracle_Final_3 <- data_3_rep |>
   filter(technique == "Oracle") |>
   select(symm, dna, back, prop.do, it, contains("rep")) |>
   pivot_longer(contains("rep"), names_to = "replicate", values_to = "oracle_sizefactor")
 ```
 
-```{r dataframe of the Oracle size factors -- 10 rep}
-Oracle_Final_10 <- data_10_rep |>
+```{r dataframe of the Oracle size factors -- 2 rep}
+Oracle_Final_2 <- data_2_rep |>
   filter(technique == "Oracle") |>
   select(symm, dna, back, prop.do, it, contains("rep")) |>
   pivot_longer(contains("rep"), names_to = "replicate", values_to = "oracle_sizefactor")
 ```
 
 ```{r dataframes comparing size factors}
-sizefactors_rel_oracle_4 <- data_4_rep |>
+sizefactors_rel_oracle_3 <- data_3_rep |>
   select(technique, symm, dna, back,
          prop.do, it, contains("rep"))|>
   filter(!(technique %in% c("MAnorm2", 	"DBA_NORM_OFFSETS_ADJUST"))) |>
   pivot_longer(contains("rep"), names_to = "replicate", values_to = "technique_sizefactor") |>
-  left_join(Oracle_Final_4, 
+  left_join(Oracle_Final_3, 
             by = c("symm", "dna", "back", "prop.do", "it", "replicate")) |>
    mutate(sizefactor_ratio = if_else(technique_sizefactor/oracle_sizefactor >= 1,
                                      technique_sizefactor/oracle_sizefactor,
@@ -251,12 +256,12 @@ sizefactors_rel_oracle_4 <- data_4_rep |>
   group_by(technique, symm, dna, back, prop.do) |>
   summarize(mean_sizefactor_ratio_prop.do = mean(sizefactor_ratio)) 
 
-sizefactors_rel_oracle_10 <- data_10_rep |>
+sizefactors_rel_oracle_2 <- data_2_rep |>
   select(technique, symm, dna, back,
          prop.do, it, contains("rep"))|>
   filter(!(technique %in% c("MAnorm2", 	"DBA_NORM_OFFSETS_ADJUST"))) |>
   pivot_longer(contains("rep"), names_to = "replicate", values_to = "technique_sizefactor") |>
-  left_join(Oracle_Final_10, 
+  left_join(Oracle_Final_2, 
             by = c("symm", "dna", "back", "prop.do", "it", "replicate")) |>
    mutate(sizefactor_ratio = if_else(technique_sizefactor/oracle_sizefactor >= 1,
                                      technique_sizefactor/oracle_sizefactor,
@@ -264,19 +269,20 @@ sizefactors_rel_oracle_10 <- data_10_rep |>
   group_by(technique, symm, dna, back, prop.do) |>
   summarize(mean_sizefactor_ratio_prop.do = mean(sizefactor_ratio)) 
 ```
+
 ## Primary Results Panels
 
 ### TTT Panels
 
-```{r 1 TTT 4 rep}
-data_4_rep |>
+```{r 1 TTT 3 rep}
+data_3_rep |>
   filter(symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -291,13 +297,14 @@ data_4_rep |>
   ggplot(aes(x = prop.do, y = values, color = technique))+
   geom_hline(data = thresholds, aes(yintercept = yint), linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
-  geom_line(aes(color = technique), size = .8)+
+  geom_line(aes(color = technique, linetype = technique), size = .8)+
   facet_wrap(~metric, scales = "free")+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
-         shape = guide_legend(title = "Technique"))+
+         shape = guide_legend(title = "Technique"),
+         linetype = guide_legend(title = "Technique"))+
   ggtitle("Simulation Results: All Technical Conditions Met")+
   theme_bw()+
   theme(text = element_text(color = "black"),
@@ -311,18 +318,18 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../visualization_outputs/TTT-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTT-3-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
-```{r 1 TTT 10 rep}
-data_10_rep |>
+```{r 1 TTT 2 rep}
+data_2_rep |>
 filter(symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -357,20 +364,20 @@ filter(symmetry & equal.DNA.bind & constant.background) |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../visualization_outputs/TTT-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTT-2-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### FTT Panels
 
-```{r 2 FTT 4 rep}
-data_4_rep |>
+```{r 2 FTT 3 rep}
+data_3_rep |>
  filter(!symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -392,7 +399,7 @@ data_4_rep |>
   labs(y = "", x = "Proportion of Peaks with Differential DNA Occupancy")+
   guides(color = guide_legend(title = "Technique"), 
          shape = guide_legend(title = "Technique"))+
-  ggtitle("Simulation Results: Asymmetric Differential DNA Occupancy")+
+  ggtitle("Simulation Results: Unbalanced Differential DNA Occupancy")+
   theme_bw()+
   theme(text = element_text(color = "black"),
         axis.text = element_text(color = "black", size = 14),
@@ -405,18 +412,18 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../visualization_outputs/FTT-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/FTT-3-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
-```{r 2 FTT 10 rep}
-data_10_rep |>
+```{r 2 FTT 2 rep}
+data_2_rep |>
  filter(!symmetry & equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -452,20 +459,20 @@ data_10_rep |>
         plot.title = element_text(size = 18))
 
 
-ggsave("../visualization_outputs/FTT-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/FTT-2-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### TFT Panels
 
-```{r 3 TFT 4 rep}
-data_4_rep |>
+```{r TFT 3 rep}
+data_3_rep |>
  filter(symmetry & !equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -500,18 +507,18 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../visualization_outputs/TFT-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TFT-3-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
-```{r 3 TFT 10 rep}
-data_10_rep |>
+```{r TFT 2 rep}
+data_2_rep |>
  filter(symmetry & !equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -547,20 +554,20 @@ data_10_rep |>
         plot.title = element_text(size = 18))
 
 
-ggsave("../visualization_outputs/TFT-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TFT-2-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 ### TTF Panels
 
-```{r 4 TTF 4 rep}
-data_4_rep |>
+```{r TTF 3 rep}
+data_3_rep |>
  filter(symmetry & equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -595,18 +602,18 @@ data_4_rep |>
         legend.text = element_text(size = 14),
         plot.title = element_text(size = 18))
 
-ggsave("../visualization_outputs/TTF-4-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTF-3-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
-```{r 4 TTF 10 rep}
-data_10_rep |>
+```{r TTF 2 rep}
+data_2_rep |>
  filter(symmetry & equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -642,7 +649,7 @@ data_10_rep |>
         plot.title = element_text(size = 18))
 
 
-ggsave("../visualization_outputs/TTF-10-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
+ggsave("../visualization_outputs/TTF-2-rep.pdf", bg = "white", dpi = 1500, width = 13, height = 7, units = "in")
 ```
 
 
@@ -650,8 +657,8 @@ ggsave("../visualization_outputs/TTF-10-rep.pdf", bg = "white", dpi = 1500, widt
 
 ## 95% Confidence Intervals of Average False Discovery Rate and Power
 
-```{r CI FDR -- 10 rep}
-data_10_rep |>
+```{r CI FDR -- 2 rep}
+data_2_rep |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE),
             se_FDR = sd(FDR, na.rm = TRUE)/sqrt(n())) |>
@@ -681,11 +688,11 @@ data_10_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../visualization_outputs/CI_FDR_10_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_FDR_2_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
-```{r CI power -- 10 rep}
-data_10_rep  |>
+```{r CI power -- 2 rep}
+data_2_rep  |>
   group_by(prop.do, technique, symm, dna, back) |>
   summarize(avg_power = mean(true_positives/(true_positives + false_negatives), na.rm = TRUE),
             se_power = sd(true_positives/(true_positives + false_negatives),
@@ -718,11 +725,11 @@ data_10_rep  |>
         legend.text = element_text(size = 14))
 
 
-ggsave("../visualization_outputs/CI_power_10_rep.pdf", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_power_2_rep.pdf", bg = "white", dpi = 2000, width = 15, height = 8, units = "in")
 ```
 
-```{r CI FDR -- 4 rep}
-data_4_rep |>
+```{r CI FDR -- 3 rep}
+data_3_rep |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
   summarize(avg_FDR = mean(FDR, na.rm = TRUE),
             se_FDR = sd(FDR, na.rm = TRUE)/sqrt(n())) |>
@@ -752,11 +759,11 @@ data_4_rep |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../visualization_outputs/CI_FDR_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_FDR_3_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
-```{r CI power -- 4 rep}
-data_4_rep  |>
+```{r CI power -- 3 rep}
+data_3_rep  |>
   group_by(prop.do, technique, symm, dna, back) |>
   summarize(avg_power = mean(true_positives/(true_positives + false_negatives), na.rm = TRUE),
             se_power = sd(true_positives/(true_positives + false_negatives),
@@ -788,25 +795,25 @@ data_4_rep  |>
         strip.text = element_text(color = "black", size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
-ggsave("../visualization_outputs/CI_power_4_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
+ggsave("../visualization_outputs/CI_power_3_rep.pdf", bg = "white", dpi = 1500, width = 15, height = 8, units = "in")
 ```
 
 ## Additional Results Panels
 
 ### FFT Panels
 
-```{r 5 FFT for 4 and 10 rep}
+```{r FFT for 3 and 2 rep}
 #| message: false
 #| warning: false
 
-data_4_rep |>
+data_3_rep |>
   filter(!symmetry & !equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -837,14 +844,14 @@ data_4_rep |>
 
 ggsave("../visualization_outputs/FFT-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
-data_10_rep |>
+data_2_rep |>
   filter(!symmetry & !equal.DNA.bind & constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -873,21 +880,21 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/FFT-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFT-2-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 ```
 
 ### FTF Panels
 
-```{r 6 FTF for 4 and 10 rep}
-data_4_rep |>
+```{r FTF for 3 and 2 rep}
+data_3_rep |>
   filter(!symmetry & equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -918,14 +925,14 @@ data_4_rep |>
 
 ggsave("../visualization_outputs/FTF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
-data_10_rep |>
+data_2_rep |>
   filter(!symmetry & equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -954,20 +961,20 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/FTF-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FTF-2-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 ```
 
 ### TFF Panels
 
-```{r 7 TFF for 4 and 10 rep}
-data_4_rep |>
+```{r TFF for 3 and 2 rep}
+data_3_rep |>
   filter(symmetry & !equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -998,14 +1005,14 @@ data_4_rep |>
 
 ggsave("../visualization_outputs/TFF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5)
 
-data_10_rep |>
+data_2_rep |>
   filter(symmetry & !equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -1034,20 +1041,20 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/TFF-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/TFF-2-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 ```
 
 ### FFF Panels
 
-```{r 8 FFF for 4 and 10 rep}
-data_4_rep |>
+```{r FFF for 3 and 2 rep}
+data_3_rep |>
   filter(!symmetry & !equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_4,
+  left_join(sizefactors_rel_oracle_3,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -1078,14 +1085,14 @@ data_4_rep |>
 
 ggsave("../visualization_outputs/FFF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
-data_10_rep |>
+data_2_rep |>
   filter(!symmetry & !equal.DNA.bind & !constant.background) |>
   mutate(power = true_positives/(true_positives + false_negatives)) |>
   group_by(technique, symmetry, symm, equal.DNA.bind, dna, 
            constant.background, back, prop.do) |>
   summarise(avg_power = mean(power), avg_FDR = mean(FDR))  |>
   ungroup() |>
-  left_join(sizefactors_rel_oracle_10,
+  left_join(sizefactors_rel_oracle_2,
             by = c("technique", "symm", "dna",
                    "back", "prop.do")) |>
   pivot_longer(avg_power:mean_sizefactor_ratio_prop.do, 
@@ -1114,6 +1121,6 @@ data_10_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/FFF-10-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFF-2-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 ```

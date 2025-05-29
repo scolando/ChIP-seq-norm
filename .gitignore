@@ -6,3 +6,4 @@
 .Rproj
 .html
 experiment_code/cutandrun_data/*
+experiment_code/chipseq_data/*
