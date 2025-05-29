@@ -172,7 +172,7 @@ means_symmT_backT_DNAT$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x19_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'All Technical Conditions Met') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
@@ -215,7 +215,7 @@ means_symmT_backT_DNAF$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x19_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'Unequal Total DNA Occupancy')+ 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
@@ -303,7 +303,7 @@ means_symmT_backF_DNAT$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x19_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding', title = 'Unequal Background Binding') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
@@ -396,7 +396,7 @@ means_symmF_backT_DNAF$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Asymmetric, different DNA-protein binding / cell, \nconstant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
@@ -439,7 +439,7 @@ means_symmF_backF_DNAT$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Asymmetric, same DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
@@ -482,7 +482,7 @@ means_symmT_backF_DNAF$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x19_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Symmetric, different DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
@@ -525,7 +525,7 @@ means_symmF_backF_DNAF$mu |>
   uncount(round(DNA_binding)) |>
   ggplot(aes(x = x_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Asymmetric, different DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
@@ -576,7 +576,7 @@ binding_df |>
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
   geom_vline(aes(xintercept = x_location - 200), data = peak_cutoffs) +
   geom_vline(aes(xintercept = x_location + 200), data = peak_cutoffs) +
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Reads in Peaks Normalization Unit') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
@@ -600,7 +600,7 @@ binding_df |>
   ggplot(aes(x = x_location, fill = Truth)) +
   geom_vline(aes(xintercept = x_location), data = background_bin_markers)+
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
-  facet_grid(group ~ .) + 
+  facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
        title = 'Background Bin Normalization Unit') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
