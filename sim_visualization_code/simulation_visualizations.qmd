@@ -842,7 +842,7 @@ data_3_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/FFT-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFT-3-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 data_2_rep |>
   filter(!symmetry & !equal.DNA.bind & constant.background) |>
@@ -923,7 +923,7 @@ data_3_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/FTF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FTF-3-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 data_2_rep |>
   filter(!symmetry & equal.DNA.bind & !constant.background) |>
@@ -1003,7 +1003,7 @@ data_3_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/TFF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5)
+ggsave("../visualization_outputs/TFF-3-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5)
 
 data_2_rep |>
   filter(symmetry & !equal.DNA.bind & !constant.background) |>
@@ -1083,7 +1083,7 @@ data_3_rep |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../visualization_outputs/FFF-4-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
+ggsave("../visualization_outputs/FFF-3-rep.pdf", bg = "white", dpi = 1500, width = 9, height = 5, units = "in")
 
 data_2_rep |>
   filter(!symmetry & !equal.DNA.bind & !constant.background) |>
