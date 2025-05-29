@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 .DS_Store
-.Rproj
 .html
+*.Rproj
 experiment_code/cutandrun_data/*
 experiment_code/chipseq_data/*

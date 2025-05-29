@@ -1,0 +1,363 @@
+---
+title: "ChIP-seq Normalization Methods: PCA and UpSet Plot"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-expand: true
+    number-sections: true
+knitr: 
+  opts_chunk: 
+    warning: false
+    message: false
+---
+
+```{r loading required packages}
+library(tidyverse)
+library(DiffBind)
+library(GreyListChIP)
+library(edgeR)
+library(csaw)
+library(fuzzyjoin)
+library(factoextra)
+library(broom)
+library(ggrepel)
+library(UpSetR)
+```
+
+
+```{r}
+bams <- list.files("chipseq_data/aligned_bams", ".bam$", full.names = TRUE)
+bams <- bams[!str_detect(bams, "bam.bai|input")] # remove bam.bai, input controls
+
+input_bams <- list.files("chipseq_data/aligned_bams", "input.bam$", full.names = TRUE)
+input_bams <- input_bams[!str_detect(input_bams, "bam.bai")]  # remove bam.bai
+
+peaks <- list.files("chipseq_data/peaks", ".bed.gz$", full.names = TRUE)
+```
+
+
+```{r}
+exp_bam_df <- as_tibble(bams) |>
+  dplyr::rename(bamReads = value) |>
+  mutate(Tissue = str_extract(bamReads, "Chr18_(.*?)_ER", group = TRUE),
+         Factor = "ER",
+         Treatment = "Full-Media",
+         Replicate = str_extract(bamReads, "ER_(.).bam", group = TRUE),
+         SampleID = paste0(Tissue,Replicate)) |>
+  cbind(Condition = c(rep('Resistant', 2),
+                      rep('Responsive', 5),
+                      rep('Resistant', 2),
+                      rep('Responsive', 2)))
+
+control_bam_df <- as_tibble(input_bams) |>
+  dplyr::rename(bamControl = value) |>
+  mutate(Tissue = str_extract(bamControl, "Chr18_(.*?)_input", group = TRUE),
+         ControlID = paste0(Tissue,'c')) 
+
+sample_sheet <- exp_bam_df |>
+  left_join(control_bam_df, by = join_by(Tissue)) |>
+  cbind(Peaks = peaks) |>
+  mutate(PeakCaller = "bed") |>
+  dplyr::select(SampleID, Tissue, Factor, Condition, Treatment, Replicate,
+                bamReads, ControlID, bamControl, Peaks, PeakCaller)
+ 
+# constructing the dba object used for DiffBind
+res_s <- dba(sampleSheet=sample_sheet, 
+            config=data.frame(AnalysisMethod=DBA_DESEQ2, th=0.05,
+                              DataType=DBA_DATA_GRANGES, RunParallel=TRUE,
+                              minQCth=15, bCorPlot=FALSE, reportInit="DBA",
+                              bUsePval=FALSE, design=TRUE,
+                              doBlacklist=TRUE, doGreylist=TRUE)) 
+```
+
+```{r creating greylists}
+# hide greylisted and blacklisted regions in dba object from further analysis
+res_s <- dba.blacklist(res_s, blacklist = DBA_BLACKLIST_HG19, greylist = TRUE)
+```
+
+
+```{r}
+olap.rate <- dba.overlap(res_s, mode=DBA_OLAP_RATE)
+olap.rate
+plot(olap.rate, xlab="Overlapping samples", ylab="Overlapping peaks", type="b")
+```
+
+
+```{r}
+res_consensus <- dba.peakset(res_s, consensus=DBA_CONDITION, minOverlap = 2)
+
+res_consensus <- dba(res_consensus, mask=res_consensus$masks$Consensus,
+                             minOverlap=1)
+
+dba.show(res_consensus,mask=res_consensus$masks$Consensus)
+dba.plotVenn(res_consensus, res_consensus$masks$Consensus)
+
+consensus_peaks <- dba.peakset(res_consensus, bRetrieve=TRUE, DataType = 'DBA_DATA_FRAME')
+```
+
+```{r}
+0.5*summary(res_s$binding[,3]-res_s$binding[,2])
+
+res_c <- dba.count(res_s, peaks=consensus_peaks,
+                   score=DBA_NORM_DEFAULT,
+                   summits=200, bParallel=FALSE)
+```
+
+
+
+```{r}
+dba.plotMA(res_c, bNormalized=FALSE, sub="Non-Normalized",
+           contrast=list(Resistant=res_c$masks$Resistant,
+                         Responsive=res_c$masks$Responsive))
+```
+
+
+```{r}
+res_c <- dba.contrast(res_c, contrast=c("Condition", 'Resistant', 'Responsive'))
+```
+
+
+# DiffBind normalization and dba analysis
+
+```{r completing DiffBind normalization and dba RiP}
+res_lib_peaks <- dba.normalize(res_c, normalize = DBA_NORM_LIB, library = DBA_LIBSIZE_PEAKREADS,
+                               spikein = FALSE)
+res_lib_peaks <- dba.analyze(res_lib_peaks)
+
+res_RLE_peaks <- dba.normalize(res_c, normalize = DBA_NORM_RLE, library = DBA_LIBSIZE_PEAKREADS,
+                               spikein = FALSE)
+res_RLE_peaks <- dba.analyze(res_RLE_peaks)
+
+res_TMM_peaks <- dba.normalize(res_c, normalize = DBA_NORM_TMM, library = DBA_LIBSIZE_PEAKREADS,
+                               spikein = FALSE)
+res_TMM_peaks <- dba.analyze(res_TMM_peaks)
+
+res_offset_peaks <- dba.normalize(res_c, normalize = DBA_NORM_OFFSETS_ADJUST,
+                               spikein = FALSE, offsets = TRUE)
+
+res_offset_peaks <- dba.analyze(res_offset_peaks)
+```
+
+## PCA on log2 Normalized Fold Changes Corresponding to Each Method
+
+```{r}
+offset_peaks_FC <- res_offset_peaks$contrasts[[1]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "offsets_peaks")
+
+RLE_peaks_FC <- res_RLE_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, fold) |>
+  mutate(method = "RLE_peaks")
+
+TMM_peaks_FC <- res_TMM_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, fold) |>
+  mutate(method = "TMM_peaks")
+
+lib_peaks_FC <- res_lib_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, fold) |>
+  mutate(method = "lib_peaks")
+
+RLE_background_FC <- res_RLE_background$contrasts[[1]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "RLE_background")
+
+TMM_background_FC <- res_TMM_background$contrasts[[1]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "TMM_background")
+
+lib_background_FC <-res_lib_background$contrasts[[1]]$DESeq2$de |>
+  select(id, fold) |>
+  mutate(method = "lib_background")
+```
+
+```{r}
+PCA_FC_df <- rbind(RLE_peaks_FC, TMM_peaks_FC, lib_peaks_FC,
+      RLE_background_FC, TMM_background_FC, lib_background_FC,
+      offset_peaks_FC) |>
+  arrange(id) |>
+  pivot_wider(names_from = id, values_from = fold, names_prefix = "peak_") 
+
+pca_input <- scale(as.matrix(PCA_FC_df[-1]), center = TRUE, scale = TRUE)
+```
+
+```{r}
+pca_FC <- prcomp(pca_input)
+summary(pca_FC)
+```
+
+```{r}
+pca_FC |>
+  augment(PCA_FC_df) |>
+  mutate(text_y_position = case_when(
+    method == "RLE_peaks" ~ .fittedPC2 + 1,
+    method == "TMM_peaks" ~ .fittedPC2 - 1.5,
+    method == "lib_background" ~ .fittedPC2 - 1.5,
+    method == "offsets_peaks"  ~ .fittedPC2 - 1.5,
+    TRUE ~ .fittedPC2 - 0.1),
+    text_x_position = case_when(
+      method == "TMM_background" ~ .fittedPC1 - 22,
+      method == "lib_peaks" ~ .fittedPC1 + 5,
+      method == "RLE_background" ~ .fittedPC1 - 22,
+      TRUE ~ .fittedPC1
+    )) |>
+  mutate(method = case_when(
+    method == "lib_background" ~ "Library Size (Background Bins)",
+    method == "lib_peaks" ~ "Library Size (Reads in Peaks)",
+    method == "RLE_background" ~ "RLE (Background Bins)",
+    method == "RLE_peaks" ~ "RLE (Reads in Peaks)",
+    method == "TMM_background" ~ "TMM (Background Bins)",
+    method == "TMM_peaks" ~ "TMM (Reads in Peaks)",
+    method == "offsets_peaks" ~ "Loess Adjusted Fit (Reads in Peaks)",
+    method == "lib_spikein" ~ "Library Size (Spike-in)",
+    method == "RLE_spikein" ~ "RLE (Spike-in)",
+    method == "TMM_spikein" ~ "TMM (Spike-in)",
+    TRUE ~ method
+  )) |>
+  ggplot(aes(x = .fittedPC1, y = .fittedPC2))+
+  geom_point(size = 3)+
+  geom_text(aes(label = method, x = text_x_position,
+                      y = text_y_position), hjust = .1, vjust = 0.2)+
+ labs(x = "PC1 (91.23%)", y = "PC2 (4.91%)")+
+  theme_bw()+
+  theme(legend.position = "bottom",
+        text = element_text(color = "black"),
+        axis.text = element_text(color = "black"),
+        legend.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        axis.title = element_text(face = "bold"))
+
+ggsave("../visualization_outputs/chipseq_experimental_data_pca.pdf",
+       bg = "white", dpi = 1500, width = 9, 
+       height = 6, units = "in")
+```
+
+
+```{r creating relevant dataframe for each method}
+loess_peaks <-res_RLE_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "loess_peaks")
+
+RLE_peaks <- res_RLE_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "RLE_peaks")
+
+TMM_peaks <- res_TMM_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "TMM_peaks")
+
+lib_peaks <- res_lib_peaks$contrasts[[1]]$DESeq2$de  |>
+  select(id, padj) |>
+  mutate(method = "lib_peaks")
+
+RLE_background <- res_RLE_background$contrasts[[1]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "RLE_background")
+
+TMM_background <- res_TMM_background$contrasts[[1]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "TMM_background")
+
+lib_background <-res_lib_background$contrasts[[1]]$DESeq2$de |>
+  select(id, padj) |>
+  mutate(method = "lib_background")
+```
+
+
+```{r}
+RLE_peaks |>
+  rbind(TMM_peaks, lib_peaks, offsets_peaks, RLE_background, TMM_background, lib_background, RLE_spikein,
+        TMM_spikein, lib_spikein) |>
+  filter(padj < 0.05) |>
+  group_by(method) |>
+  summarize(number_db_peaks = length(unique(id))) |>
+  mutate(prop_in_highconfidence = round(209/number_db_peaks, 3))
+```
+
+
+```{r}
+## UpSet Plot of Differentially Bound Peaksets
+RLE_peaks_db <- RLE_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+TMM_peaks_db <- TMM_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+lib_peaks_db <- lib_peaks |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+RLE_background_db <- RLE_background |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+TMM_background_db <- TMM_background |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+lib_background_db <- lib_background |>
+  filter(padj < 0.05) |>
+  _$id |> unique()
+
+offsets_peaks_db <- loess_peaks |>
+    filter(padj < 0.05) |>
+  _$id |> unique()
+  
+```
+
+```{r}
+list <- list(`RLE (Reads in Peaks)` = RLE_peaks_db,
+     `TMM (Reads in Peaks)` = TMM_peaks_db,
+     `Library Size (Reads in Peaks)` = lib_peaks_db,
+     `Loess Adjusted Fit (Reads in Peaks)` = offsets_peaks_db,
+     `RLE (Background Bins)` = RLE_background_db,
+     `TMM (Background Bins)` = TMM_background_db,
+     `Library Size (Background Bins)` = lib_background_db
+    )
+
+png("../visualization_outputs/chipseq_upset_plot_high_res.png",
+    width = 14, height = 8, units = "in", res = 300)
+
+UpSetR::upset(fromList(list), order.by = "freq", nsets = 7, nintersects = 20,
+              text.scale = 1.75, mainbar.y.label = "Distinct Intersection Size\nof Called DB Peakset(s)",
+              main.bar.color = "black", matrix.color = "black",
+              point.size = 3, line.size = 1, sets.x.label = "")
+
+dev.off()
+```
+
+```{r}
+# https://support.bioconductor.org/p/9137293/
+# https://content.cruk.cam.ac.uk/bioinformatics/software/DiffBind/plotProfileDemo.html
+library(profileplyr)
+
+
+list <- list(`RLE (Reads in Peaks)` = RLE_peaks_db,
+     `TMM (Reads in Peaks)` = TMM_peaks_db,
+     `Library Size (Reads in Peaks)` = lib_peaks_db,
+     `Loess Adjusted Fit (Reads in Peaks)` = offsets_peaks_db,
+     `RLE (Background Bins)` = RLE_background_db,
+     `TMM (Background Bins)` = TMM_background_db,
+     `Library Size (Background Bins)` = lib_background_db
+    )
+
+intersection <- Reduce(intersect, list(
+  RLE_peaks_db, TMM_peaks_db, lib_peaks_db, offsets_peaks_db,
+  RLE_background_db, TMM_background_db, lib_background_db
+))
+
+
+rep <- dba.report(res_RLE_peaks)
+rep <- rep[rep$`p-value` < 0.05]
+rep <- rep[order(rep$Fold, decreasing=TRUE),]
+
+
+dba.plotProfile(res_RLE_peaks, sites=rep,
+                merge=c(DBA_TISSUE, DBA_REPLICATE),
+                samples=list(Resistant=res_RLE_peaks$mask$Resistant,
+                                         Responsive=res_RLE_peaks$mask$Responsive),
+                doPlot=TRUE)
+```
+

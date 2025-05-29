@@ -20,7 +20,6 @@ library(DiffBind)
 library(GreyListChIP)
 library(edgeR)
 library(csaw)
-library(MAnorm2)
 library(fuzzyjoin)
 library(factoextra)
 library(broom)
@@ -30,25 +29,26 @@ library(UpSetR)
 
 ```{r reading in files}
 # reading in .bam files
-bams <-list.files("cutandrun_data/tryp_aligned_bams/", ".bam")
+bams <-list.files("cutandrun_data/tryp_aligned_bams/", ".bam$")
 bams<-bams[!str_detect(bams, "bam.bai|IgG")] #remove bam.bai, IgG control
 bams<-c(bams[1:5], bams[18:20], bams[6:17]) 
 
 #reading in spike in files
-spikes <- list.files("cutandrun_data/yeast_aligned_bams/",  ".bam")
+spikes <- list.files("cutandrun_data/yeast_aligned_bams/",  ".bam$")
 spikes<-spikes[str_detect(spikes, "sort")] # take sorted bam files
 spikes<-spikes[!str_detect(spikes, "bam.bai")] #remove bam.bai, and 2 orig 0h
 spikes<-c(spikes[1:2],spikes[4],spikes[3],spikes[5],spikes[15:17],spikes[6:14], spikes[18:20]) #sort nicely
 
-# reading in broadpeak files
-peaks <- list.files("cutandrun_data/MACS_peaks/", ".broadPeak") 
+# reading in peak files
+peaks <- list.files("cutandrun_data/MACS_peaks/", ".broadPeak$") 
 peaks <- c(peaks[1:5], peaks[7],peaks[9],peaks[11],peaks[6],peaks[8],peaks[10], peaks[12:20]) #sort nicely
 ```
 
 ```{r constructing samplesheet and dba obj}
 # construct sample sheet with paths to all relevant files
 sample_sheet<-data.frame(
-  SampleID= c('0h_1', '0h_2', '0h_2re','0h_3','0h_3re', paste0(rep(c('0.5h_','1h_','3h_','24h_','76h_'), each=3), rep(1:3,5))),
+  SampleID= c('0h_1', '0h_2', '0h_2re','0h_3','0h_3re',
+              paste0(rep(c('0.5h_','1h_','3h_','24h_','76h_'), each=3), rep(1:3,5))),
   Condition= c(rep('0', 5), rep(c('0.5', '1', '3', '24', '76'), each=3)),
   Treatment= rep("Bromodomain Inhibition", 20),
   Replicate= c(1,2,3,4,5,rep(1:3, 5)),
@@ -57,11 +57,11 @@ sample_sheet<-data.frame(
   ControlID= rep("16_IgG_1", 20),
   bamControl= rep("cutandrun_data/16_IgG_1_CR_diff_comb_140804_tb927_v5.1_m1_v2_sorted.bam", 20),
   Peaks= paste0("cutandrun_data/MACS_peaks/", peaks),
-  PeakCaller= rep("narrow", 20)
+  PeakCaller= rep("narrow", 20) # based on vignette since used MACS2 to find peaks
 )
 
 # constructing the dba object used for DiffBind
-res_s<- dba(sampleSheet=sample_sheet, 
+res_s <- dba(sampleSheet=sample_sheet, 
             config=data.frame(AnalysisMethod=DBA_DESEQ2, th=0.05,
                               DataType=DBA_DATA_GRANGES, RunParallel=TRUE,
                               minQCth=15, bCorPlot=FALSE, reportInit="DBA",
@@ -76,7 +76,7 @@ set.seed(4747)
 karyo<-read.table("cutandrun_data/karyo.txt")
 
 #create greylist object
-gl<-new("GreyList", karyoFile="cutandrun_data/karyo.txt")
+gl <- new("GreyList", karyoFile="cutandrun_data/karyo.txt")
 #count the reads from the control file
 gl <- countReads(gl,"cutandrun_data/16_IgG_1_CR_diff_comb_140804_tb927_v5.1_m1_v2_sorted.bam") 
 #calculate read count threshold
@@ -84,7 +84,7 @@ gl <- calcThreshold(gl,reps=100,sampleSize=1000,p=0.99,cores=1)
 gl <- makeGreyList(gl,maxGap=10000)
 
 # hide greylisted regions in dba object from further analysis
-res_s<-invisible(suppressMessages(dba.blacklist(res_s, greylist=gl@regions)))
+res_s <- dba.blacklist(res_s, greylist=gl@regions)
 ```
 
 ```{r finding consensus peaks}
@@ -92,12 +92,15 @@ res_s<-invisible(suppressMessages(dba.blacklist(res_s, greylist=gl@regions)))
 # DBA peakset function has a list of consensus parameters, DBA_CONDITION is saying that samples should be grouped based on timepoint which we defined up above when we created the DBA object
 res_consensus <- dba.peakset(res_s, consensus=c(DBA_CONDITION), minOverlap=3)
 
-#mask other peaksets, focuses only on consensus
+# masks other peaksets, focuses only on consensus
 # functions called on DBA only looks at consensus peak sets, so we maintain replicates but within each replicate only peaks that show up in other replicates remain
 res_consensus <- dba(res_consensus, mask=res_consensus$masks$Consensus,
                              minOverlap=1)
 
-#creates an object containing the consensus peaks, and writes it out as a bed file
+# shows consensus peak info
+dba.show(res_consensus,mask=res_consensus$masks$Consensus)
+
+# creates an object containing the consensus peaks, and writes it as a data.frame
 consensus_peaks <- dba.peakset(res_consensus, bRetrieve=TRUE, DataType = 'DBA_DATA_FRAME')
 ```
 
@@ -107,16 +110,17 @@ consensus_peaks <- dba.peakset(res_consensus, bRetrieve=TRUE, DataType = 'DBA_DA
 summary(res_s$binding[,3]-res_s$binding[,2])
 
 # initial normalization with  2 different strategies, but we haven't created actual normalized counts yet
-res_c <- dba.count(res_s, score=DBA_SCORE_NORMALIZED, peaks=consensus_peaks, summits=200, bParallel=FALSE)
+res_c <- dba.count(res_s, score=DBA_SCORE_NORMALIZED, peaks=consensus_peaks,
+                   summits=200, bParallel=FALSE)
 res_c<-invisible(suppressMessages(dba.blacklist(res_c, greylist=gl@regions)))
 ```
 
 ```{r setting up contrasts}
-res_c<-dba.contrast(res_c, contrast=c("Condition", '0.5', '0'))
-res_c<-dba.contrast(res_c, contrast=c("Condition", '1', '0'))
-res_c<-dba.contrast(res_c, contrast=c("Condition", '3', '0'))
-res_c<-dba.contrast(res_c, contrast=c("Condition", '24', '0'))
-res_c<-dba.contrast(res_c, contrast=c("Condition", '76', '0'))
+res_c <- dba.contrast(res_c, contrast=c("Condition", '0.5', '0'))
+res_c <- dba.contrast(res_c, contrast=c("Condition", '1', '0'))
+res_c <- dba.contrast(res_c, contrast=c("Condition", '3', '0'))
+res_c <- dba.contrast(res_c, contrast=c("Condition", '24', '0'))
+res_c <- dba.contrast(res_c, contrast=c("Condition", '76', '0'))
 ```
 
 ## DiffBind normalization and dba analysis
@@ -140,14 +144,14 @@ res_offsets_peaks <- dba.analyze(res_offsets_peaks)
 ```
 
 ```{r completing DiffBind normalization and dba background}
-res_lib_background<-dba.normalize(res_c, normalize=DBA_NORM_LIB, background=TRUE, spikein=FALSE)
-res_lib_background<-dba.analyze(res_lib_background)
+res_lib_background <-dba.normalize(res_c, normalize=DBA_NORM_LIB, background=TRUE, spikein=FALSE)
+res_lib_background <- dba.analyze(res_lib_background)
 
-res_RLE_background<-dba.normalize(res_c, normalize=DBA_NORM_RLE, background=TRUE, spikein=FALSE)
-res_RLE_background<-dba.analyze(res_RLE_background)
+res_RLE_background <- dba.normalize(res_c, normalize=DBA_NORM_RLE, background=TRUE, spikein=FALSE)
+res_RLE_background <- dba.analyze(res_RLE_background)
 
-res_TMM_background<-dba.normalize(res_c, normalize=DBA_NORM_TMM, background=TRUE, spikein=FALSE)
-res_TMM_background<-dba.analyze(res_TMM_background)
+res_TMM_background <- dba.normalize(res_c, normalize=DBA_NORM_TMM, background=TRUE, spikein=FALSE)
+res_TMM_background <- dba.analyze(res_TMM_background)
 ```
 
 ```{r completing DiffBind normalization and dba spikein}
@@ -159,52 +163,6 @@ res_RLE_spikein <- dba.analyze(res_RLE_spikein)
 
 res_TMM_spikein <- dba.normalize(res_c, normalize=DBA_NORM_TMM, spikein = TRUE)
 res_TMM_spikein <- dba.analyze(res_TMM_spikein)
-```
-
-```{r MAnorm2 preprocessing}
-system("sh cutandrun_MAnorm2.sh")
-```
-
-```{r MAnorm2 normalization and dba}
-#| warning: false
-#| message: false
-
-consensus_peaks <- consensus_peaks |> mutate(id = row_number()) |> select(CHR, START, END, id)
-
-MAnorm2_df <- read_table("cutandrun_data/cutandrun_profile_bins.xls") |>
-  dplyr::rename(CHR = chrom, START = start, END = end) |>
-  genome_inner_join(consensus_peaks, by = c("CHR", "START", "END"))
-
-## following vignette: https://cran.r-project.org/web/packages/MAnorm2/vignettes/MAnorm2_vignette.html#quick-start
-
-# performing within group normalization
-norm <- MAnorm2::normalize(MAnorm2_df, count = 4:8, occupancy = 24:28) #00hr
-norm <- MAnorm2::normalize(norm, count = 9:11, occupancy = 29:31) #0.5hr
-norm <- MAnorm2::normalize(norm, count = 12:14, occupancy = 32:34) #1hr
-norm <- MAnorm2::normalize(norm, count = 15:17, occupancy = 35:37) #3hr
-norm <- MAnorm2::normalize(norm, count = 18:20, occupancy = 38:40) #24hr
-norm <- MAnorm2::normalize(norm, count = 21:23, occupancy = 41:43) #76hr
-
-# construct a bioCond for each group of samples.
-conds <- list(cond_00hr = bioCond(norm[4:8], norm[24:28], name = "00hr"),
-              cond_0.5hr = bioCond(norm[9:11], norm[29:31], name = "0.5hr"),
-              cond_1hr = bioCond(norm[12:14], norm[32:34], name = "1hr"),
-              cond_3hr = bioCond(norm[15:17], norm[35:37], name = "3hr"),
-              cond_24hr = bioCond(norm[18:20], norm[38:40], name = "24hr"),
-              cond_76hr = bioCond(norm[21:23], norm[41:43], name = "76hr"))
-
-conds <- normBioCond(conds, common.peak.regions = NULL)
-# Fit a mean-variance curve.
-# If the following function call raises an error,
-# set init.coef = c(0.1, 10) or try method = "local".
-conds <- fitMeanVarCurve(conds, method = "parametric", occupy.only = TRUE,
-                         init.coef = c(0.1, 10))
-
-res_0.5hr <- diffTest(conds[[1]], conds[[2]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
-res_1hr <- diffTest(conds[[1]], conds[[3]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
-res_3hr <- diffTest(conds[[1]], conds[[4]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
-res_24hr <- diffTest(conds[[1]], conds[[5]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
-res_76hr <- diffTest(conds[[1]], conds[[6]]) |> cbind(id = MAnorm2_df$id) |> select(id, padj)
 ```
 
 ## Creating Relevant Data Frame for Each Method (0hr versus 3hr)
@@ -225,9 +183,6 @@ lib_peaks <- res_lib_peaks$contrasts[[3]]$DESeq2$de  |>
 offsets_peaks <- res_offsets_peaks$contrasts[[3]]$DESeq2$de |>
   select(id, padj) |>
   mutate(method = "offsets_peaks")
-
-MAnorm2 <- res_3hr |> select(id, padj) |> mutate(method = "MAnorm2")|>
-  group_by(id) |> arrange(padj) |> slice_head(n = 1)
 
 RLE_background <- res_RLE_background$contrasts[[3]]$DESeq2$de |>
   select(id, padj) |>
@@ -273,14 +228,6 @@ offsets_peaks_FC <- res_offsets_peaks$contrasts[[3]]$DESeq2$de |>
   select(id, fold) |>
   mutate(method = "offsets_peaks")
 
-MAnorm2_FC <- diffTest(conds[[1]], conds[[4]]) |> 
-  cbind(id = MAnorm2_df$id) |> 
-  select(id, Mval) |>
-  dplyr::rename(fold = Mval) |>
-  group_by(id) |>
-  summarize(fold = max(fold)) |> #not sure about this step
-  mutate(method = "MAnorm2")
-
 RLE_background_FC <- res_RLE_background$contrasts[[3]]$DESeq2$de |>
   select(id, fold) |>
   mutate(method = "RLE_background")
@@ -311,11 +258,13 @@ PCA_FC_df <- rbind(RLE_peaks_FC, TMM_peaks_FC, lib_peaks_FC, offsets_peaks_FC,
       RLE_background_FC, TMM_background_FC, lib_background_FC,
       RLE_spikein_FC, TMM_spikein_FC, lib_spikein_FC) |>
   arrange(id) |>
-  pivot_wider(names_from = id, values_from = fold, names_prefix = "peak_") 
+  pivot_wider(names_from = id, values_from = fold, names_prefix = "peak_")
+
+pca_data <- scale(as.matrix(PCA_FC_df[-1]), center = TRUE, scale = TRUE)
 ```
 
 ```{r}
-pca_FC <- prcomp(PCA_FC_df[-1])
+pca_FC <- stats::prcomp(pca_data)
 summary(pca_FC)
 ```
 
@@ -323,14 +272,23 @@ summary(pca_FC)
 pca_FC |>
   augment(PCA_FC_df) |>
   mutate(text_y_position = case_when(
-    method == "offsets_peaks" ~ .fittedPC2 + 0.2,
-    method == "lib_peaks" ~ .fittedPC2 + 0.1,
-    method == "TMM_background" ~ .fittedPC2 + 0.075,
-    method == "RLE_background" ~ .fittedPC2,
-    TRUE ~ .fittedPC2 - 0.1),
+    method == "TMM_background" ~ .fittedPC2 - 0.125,
+    method == "RLE_spikein" ~ .fittedPC2 - 0.2,
+    method == "lib_spikein" ~ .fittedPC2 + 0.2,
+    method == "TMM_spikein" ~ .fittedPC2 - 0.2,
+    method == "lib_peaks" ~ .fittedPC2 + 0.2,
+    method == "offsets_peaks" ~ .fittedPC2 - 0.2,
+    TRUE ~ .fittedPC2),
     text_x_position = case_when(
-      method == "TMM_background" ~ .fittedPC1 - 8.5,
-      method == "RLE_background" ~ .fittedPC1 - 8.5,
+      method == "TMM_background" ~ .fittedPC1 - 7,
+      method == "RLE_background" ~ .fittedPC1 - 7,
+      method == 'lib_background' ~ .fittedPC1 + 10,
+      method == "RLE_spikein" ~ .fittedPC1 - 4,
+      method == "TMM_spikein" ~ .fittedPC1 + 0.50,
+      method == "offsets_peaks" ~ .fittedPC1 + 10,
+      method == "TMM_peaks" ~ .fittedPC1 + 7,
+      method == "RLE_peaks" ~ .fittedPC1 + 7,
+      method == "lib_peaks" ~ .fittedPC1 + 7,
       TRUE ~ .fittedPC1,
     )) |>
   mutate(method = case_when(
@@ -349,8 +307,8 @@ pca_FC |>
   ggplot(aes(x = .fittedPC1, y = .fittedPC2))+
   geom_point(size = 3)+
   geom_text(aes(label = method, x = text_x_position,
-                      y = text_y_position), hjust = 0)+
- labs(x = "PC1 (99.45%)", y = "PC2 (0.39%)")+
+                      y = text_y_position))+
+ labs(x = "PC1 (99.43%)", y = "PC2 (0.40%)")+
   theme_bw()+
   theme(legend.position = "bottom",
         text = element_text(color = "black"),
@@ -359,30 +317,39 @@ pca_FC |>
         strip.text = element_text(face = "bold"),
         axis.title = element_text(face = "bold"))
 
-ggsave("../png_outputs/experimental_data_pca.png", bg = "white", dpi = 1500, width = 9, 
+ggsave("../visualization_outputs/cutandrun_experimental_data_pca.pdf",
+       bg = "white", dpi = 1500, width = 9, 
        height = 6, units = "in")
 ```
 
 ## UpSet Plot of Differentially Bound Peaksets
 
+
+```{r}
+RLE_peaks |>
+  rbind(TMM_peaks, lib_peaks, offsets_peaks, RLE_background, TMM_background, lib_background, RLE_spikein,
+        TMM_spikein, lib_spikein) |>
+  filter(padj < 0.05) |>
+  group_by(method) |>
+  summarize(number_db_peaks = length(unique(id))) |>
+  mutate(prop_in_highconfidence = round(170/number_db_peaks, 3))
+```
+
+
 ```{r}
 RLE_peaks_db <- RLE_peaks |>
   filter(padj < 0.05) |>
-  _$id |> unique()
+  _$id |> unique() 
 
 TMM_peaks_db <- TMM_peaks |>
   filter(padj < 0.05) |>
-  _$id |> unique()
+  _$id |> unique() 
 
 lib_peaks_db <- lib_peaks |>
   filter(padj < 0.05) |>
-  _$id |> unique()
+  _$id |> unique() 
 
 offsets_peaks_db <- offsets_peaks |>
-  filter(padj < 0.05) |>
-  _$id |> unique()
-
-MAnorm2_peaks_db <- MAnorm2 |>
   filter(padj < 0.05) |>
   _$id |> unique()
 
@@ -423,7 +390,9 @@ list <- list(`RLE (Reads in Peaks)` = RLE_peaks_db,
      `TMM (Spike-ins)` = TMM_spikein_db,
      `Library Size (Spike-ins)` = lib_spikein_db)
 
-png("../png_outputs/upset_plot_high_res.png", width = 14, height = 8, units = "in", res = 300)
+png("../visualization_outputs/cutandrun_upset_plot_high_res.png", 
+    width = 14, height = 8,
+    units = "in", res = 300)
 
 UpSetR::upset(fromList(list), order.by = "freq", nsets = 11, nintersects = 20,
               text.scale = 1.75, mainbar.y.label = "Distinct Intersection Size\nof Called DB Peakset(s)",
