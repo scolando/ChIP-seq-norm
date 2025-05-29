@@ -21,19 +21,24 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
   
   ## First, we create a diffbind object with the bams, reads, and peak files
   
-  bamReads <- as_tibble(paste(paste0("./sim_folder_",it,"_do_",prop.do,"/"), list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern= "*.bam$")[!str_detect(list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern="*.bam$"), "bam.bai")], sep="")) |>
+  bamReads <- as_tibble(paste(paste0("./sim_folder_",it,"_do_",prop.do,"/"), list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern= "*_exp.bam$")[!str_detect(list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern="*_exp.bam$"), "bam.bai")], sep="")) |>
     mutate(Condition = str_extract(value, "cond(.)", group = TRUE),
            number = as.numeric(str_extract(value, "out_(.*)_sim", group = TRUE))) |>
     arrange(Condition, number) |>
     mutate(Replicate= rep(1:replicates, 2),
            SampleID = paste0("cond",Condition,"_rep",Replicate))
   
-  peaks <- as_tibble(paste(paste0("./sim_folder_",it,"_do_",prop.do,"/"), list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern="*.narrowPeak"), sep="")) |>
+  bamControls <-  as_tibble(paste(paste0("./sim_folder_",it,"_do_",prop.do,"/"), list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern="*_input.bam$"), sep="")) |>
     mutate(Condition = str_extract(value, "cond(.)", group = TRUE),
            sample_id = as.numeric(str_extract(value, "out_(.*)_sim", group = TRUE))) |>
     arrange(Condition, sample_id) |>
     mutate(Replicate= rep(1:replicates, 2))
   
+  peaks <- as_tibble(paste(paste0("./sim_folder_",it,"_do_",prop.do,"/"), list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/"), pattern="*.narrowPeak"), sep="")) |>
+    mutate(Condition = str_extract(value, "cond(.)", group = TRUE),
+           sample_id = as.numeric(str_extract(value, "out_(.*)_sim", group = TRUE))) |>
+    arrange(Condition, sample_id) |>
+    mutate(Replicate= rep(1:replicates, 2))
   
   sample_sheet<-data.frame(
     SampleID= bamReads$SampleID,
@@ -72,14 +77,22 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
   ## we start by reading in the .txt file created during data generation (i.e., in simulate_reads_proportions.R) that identifies the regions with differential DNA occupancy 
   
   true_do <- readr::read_table(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_log_sim_",it, "_do_",prop.do,".txt"))
+  true_peaks <- readr::read_table(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_log_sim_",it, "_do_",prop.do,"_true_peaks.txt"))
   consensus_peaks_df <- data.frame(Start = consensus_peaks@ranges@start, Width = consensus_peaks@ranges@width) |>
     mutate(End = Start + Width) |> mutate(Chr = "chrA")
   
+  called_true_peaks <- genome_inner_join(consensus_peaks_df, true_peaks, by = c("Chr", "Start", "End"))
   called_true_do_peaks <- genome_inner_join(consensus_peaks_df, true_do, by = c("Chr", "Start", "End"))
   
   n_true_do <- nrow(true_do)
+  n_true_peaks <- nrow(true_peaks)
   n_consensus_peaks <- nrow(consensus_peaks_df)
   n_true_do_called <- nrow(called_true_do_peaks) # intersection of true_do and consensus_peaks 
+  n_true_peaks_called <- nrow(called_true_peaks) 
+  
+  peak_call_tpr_do <- n_true_do_called/n_true_do
+  peak_call_tpr <- n_true_peaks_called/n_true_peaks
+  peak_call_fdp <- (n_consensus_peaks - n_true_peaks_called)/n_consensus_peaks
   
   ####################################DIFFBIND: COUNTING READS##################################### 
   
@@ -91,18 +104,18 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
   summits <- ceiling((min+quart_1)/2)
   
   ## Now we are creating the dba counts/contrasts to be used in DiffBind normalization
-  # Jo added bParallel=FALSE (and below) to help with running on the HPC
+  # added bParallel=FALSE (and below) to help with running on the HPC
   # from this help file: https://www.biostars.org/p/9512204/#9548140
   
   res_c <- dba.count(res_s, peaks = consensus_peaks, summits = summits, bParallel=FALSE)
   
   res_c <- dba.contrast(res_c, contrast=c("Condition", 'A', 'B'))
   
-  # Jo from this help file: https://support.bioconductor.org/p/p133921/
-  # set the number of cores being used to normalize
+  # From this help file: https://support.bioconductor.org/p/p133921/
+  # Set the number of cores being used to normalize
   res_c$config$cores <- 1
   
-  ## creating a directory for created csvs, which are useful when running code manually
+  ## Creating a directory for created csvs, which are useful when running code manually
   
   dir.create(paste0("./sim_folder_",it,"_do_",prop.do,"/norm_csvs_",it,"_do_",prop.do,"/"))
   
@@ -152,8 +165,9 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
   ## creating data frames
   
   df_all <- data.frame(technique, true_positives, false_positives, true_negatives, 
-                       false_negatives, FDR, n_true_do_called, 
-                       n_consensus_peaks, n_true_do, it, prop.do,
+                       false_negatives, FDR, n_consensus_peaks, n_true_do, 
+                       peak_call_tpr_do, peak_call_tpr, peak_call_fdp,
+                       it, prop.do,
                        symmetry, constant.background,
                        equal.DNA.bind, equal.lib.size,
                        prop.consensus, more.background.cond, FDR.threshold)
@@ -206,8 +220,9 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
     ## creating data frames   
     
     df <- data.frame(technique, true_positives, false_positives, true_negatives, 
-                     false_negatives, FDR, n_true_do_called, 
-                     n_consensus_peaks, n_true_do, it, prop.do,
+                     false_negatives, FDR, n_consensus_peaks, n_true_do, 
+                     peak_call_tpr_do, peak_call_tpr, peak_call_fdp,
+                     it, prop.do,
                      symmetry, constant.background,
                      equal.DNA.bind, equal.lib.size,
                      prop.consensus, more.background.cond, FDR.threshold)
@@ -227,8 +242,10 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
   
   dir.create(paste0("./sim_folder_",it,"_do_",prop.do,"/MAnorm2/"))
   
+  consensus_peaks <- dba.peakset(res_s, bRetrieve = TRUE, writeFile = paste0("./sim_folder_",it,"_do_",prop.do,"/MAnorm2/consensus_peaks.bed"))
+  
   bam_files <- list.files(path = paste0("./sim_folder_",it,"_do_",prop.do,"/"),
-                          pattern = ".bam$")
+                          pattern = "_exp.bam$")
   
   for(i in 1:length(bam_files)){
     file.copy(from = paste0("./sim_folder_",it,"_do_",prop.do,"/",bam_files[i]),
@@ -250,6 +267,18 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
                 to = new_filename)
   }
   
+  summit_files <- list.files(path = paste0("./sim_folder_",it,"_do_",prop.do,"/"),
+                                 pattern = "summits.bed$")
+  
+  for(i in 1:length(summit_files)){
+    file.copy(from = paste0("./sim_folder_",it,"_do_",prop.do,"/",summit_files[i]),
+              to = paste0("./sim_folder_",it,"_do_",prop.do,"/MAnorm2/",summit_files[i]))
+    new_filename <- gsub(paste0("_sim_",it,"_do_",prop.do,"_cond."), "", paste0("./sim_folder_",it,"_do_",prop.do,"/MAnorm2/",summit_files[i]))
+    new_filename <- gsub(".bam_macs_peak_peaks", "", new_filename)
+    file.rename(from = paste0("./sim_folder_",it,"_do_",prop.do,"/MAnorm2/",summit_files[i]), 
+                to = new_filename)
+  }
+  
   #### now that our files are conveniently placed and named we will run our shell script which creates the .xls file MAnorm2 uses as its input
   
   MAnorm2_script <- paste('MAnorm2.sh ', it, prop.do, 2*replicates)
@@ -258,11 +287,12 @@ read_analysis <- function(iters, prop.do = 0.05, symmetry = TRUE,
   
   ### MAnorm2.sim performs the MAnorm2 analysis steps that are outlined in the MAnorm2 package vignette
   
-  df_all_final <- MAnorm2.sim(MAnorm2, iters = it, df_all = df_all, prop.do = prop.do,
+  df_all_final <- MAnorm2.sim(MAnorm2, iters = it, 
+                              consensus_peaks_df = consensus_peaks_df, prop.consensus = prop.consensus,
+                              df_all = df_all, prop.do = prop.do,
                               equal.DNA.bind = equal.DNA.bind,
                               symmetry = symmetry, constant.background = constant.background,
                               equal.lib.size = equal.lib.size,
-                              consensus_peaks = consensus_peaks, prop.consensus = prop.consensus,
                               FDR.threshold = FDR.threshold)
   
   ####################################RETURN STATEMENT#####################################

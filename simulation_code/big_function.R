@@ -56,7 +56,7 @@ big_function <- function(iters, prop.do = 0.05,
                                 prop.consensus = prop.consensus,
                                 FDR.threshold = FDR.threshold) 
   
-  ## For the sake of memory, we unlink (i.e., delete) each folder after creating the final data frame:
+  ## For the sake of memory, we unlink each folder after creating the final data frame
  
   unlink(paste0("./sim_folder_",iters,"_do_",prop.do,"/"), recursive = TRUE)
 

@@ -4,7 +4,7 @@
 #uses MAnorm2_utils package which is available through pip
 
 
-for file in ./sim_folder_$1_do_$2/MAnorm2/*.bam; do
+for file in ./sim_folder_$1_do_$2/MAnorm2/*_exp.bam; do
     echo "converting bam reads to bed files"
     bedtools bamtobed -i ${file} > ${file}.bed
     echo "finished!"
@@ -16,14 +16,22 @@ n=$3
 combinedpeaks=""
 
 for i in $(seq 1 $(($n > 0? $n: 0))); do
-  token="./sim_folder_$1_do_$2/MAnorm2/tf_out_$i.narrowPeak"
+  token="./sim_folder_$1_do_$2/MAnorm2/tf_out_${i}_macs_peak_peaks.narrowPeak"
   combinedpeaks="${combinedpeaks}${combinedpeaks:+,}$token"
 done
+
+combinedsummits=""
+
+for i in $(seq 1 $(($n > 0? $n: 0))); do
+  token="./sim_folder_$1_do_$2/MAnorm2/tf_out_${i}_macs_peak_summits.bed"
+  combinedsummits="${combinedsummits}${combinedsummits:+,}$token"
+done
+
 
 combinedreads=""
 
 for j in $(seq 1 $(($n > 0? $n: 0))); do
-  token="./sim_folder_$1_do_$2/MAnorm2/tf_out_$j.bam.bed"
+  token="./sim_folder_$1_do_$2/MAnorm2/tf_out_${j}_exp.bam.bed"
   combinedreads="${combinedreads}${combinedreads:+,}$token"
 done
 
@@ -43,7 +51,7 @@ done
 echo $labs
 
 echo "creating bin profile"
-profile_bins --peaks=$combinedpeaks --typical-bin-size=1000 --reads=$combinedreads --labs=$labs -n ./sim_folder_$1_do_$2/MAnorm2/cond_A_and_B
+profile_bins --peaks=$combinedpeaks --typical-bin-size=1000 --summits=$combinedsummits --reads=$combinedreads --labs=$labs -n ./sim_folder_$1_do_$2/MAnorm2/cond_A_and_B
 echo "finished profiling"
 
 ### all conditions in one profile_bin

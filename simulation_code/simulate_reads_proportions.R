@@ -36,7 +36,7 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
                                        equal.lib.size = TRUE,
                                        replicates = 2,
                                        fraglen = 100, true.width = 500,
-                                       npeaks = 10000, prior.df = 50, 
+                                       npeaks = 10000, prior.df = 50, #maybe make less peaks maybe 500-1000 or something
                                        base.mu.jitter = 5, back.const.down = 0.33,
                                        back.const.up = 0.67, back.vary.down = 0,
                                        back.vary.up = 0.20)
@@ -106,7 +106,8 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   sizes <- c(chrA = max(pos.1) + 10000) # a single number that represents length of the chromosome
   chrs <- rep("chrA", npeaks) # simulating all peaks on one chromosome for simplicity
   
-  fnames<-list()
+  fnames <- list()
+  input_controls <- list()
   basesums <- c()
   
   ## given we want the baseline props to retain the correct fc,
@@ -129,7 +130,8 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   for (lib in 1:length(grouping)) {
     baseline_props <- cur.mu/sum(cur.mu) #resetting so we don't write over the already edited proportions 
     
-    fname <- paste0("./sim_folder_", it, "_do_", prop.do,"/tf_out_", lib,"_sim_",it,"_do_",prop.do,"_cond", grouping[lib],".sam")
+    fname <- paste0("./sim_folder_", it, "_do_", prop.do,"/tf_out_", lib,"_sim_",it,"_do_",prop.do,"_cond", grouping[lib],"_exp.sam")
+    input_control <- paste0("./sim_folder_", it, "_do_", prop.do,"/tf_out_", lib,"_sim_",it,"_do_",prop.do,"_cond", grouping[lib],"_input.sam")
     
     if (grouping[lib] == "A") { 
       baseline_props[up.A] <- fc.up.A*baseline_props[up.A]
@@ -140,6 +142,9 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
       mu.used.A <- prop.mu_A * expected.lib.size[lib] * sizeRatio[lib]
       
       xscss::peakFile(fname, chrs=chrs, pos=pos.1, mu=mu.used.A, disp=disp,
+                      sizes=sizes, fraglen=fraglen, width=true.width, tf=TRUE)
+      
+      xscss::peakFile(input_control, chrs=chrs, pos=pos.1, mu=0, disp=0,
                       sizes=sizes, fraglen=fraglen, width=true.width, tf=TRUE)
       
     } else { #this is for grouping B
@@ -157,9 +162,14 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
       xscss::peakFile(fname, chrs=chrs, pos=pos.1, mu=mu.used.B, disp=disp,
                       sizes=sizes, fraglen=fraglen, width=true.width, tf=TRUE)
       
+      
+      xscss::peakFile(input_control, chrs=chrs, pos=pos.1, mu=0, disp=0,
+                      sizes=sizes, fraglen=fraglen, width=true.width, tf=TRUE)
+      
     }
     
-    fnames[[lib]]<-fname
+    fnames[[lib]] <- fname
+    input_controls[[lib]] <- input_control
     
   }
   
@@ -173,12 +183,30 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   
   write_csv(SizeFactors, file = paste0("./sim_folder_",it,"_do_",prop.do,"/OracleFactors_sim_",it,"_do_",prop.do,".txt"))
   
-  fnames<-unlist(fnames)
-  
   ####################################ADDING BACKGROUND BINDING########################################
   
+  fnames <- unlist(fnames)
+  input_controls <- unlist(input_controls)
   
-  if (constant.background){
+  # first, we add the background binding for the input controls
+  more.background.cond <- FALSE 
+  
+  background.mu <- c(base.mu*back.const.down, base.mu*back.const.up)
+  bdispersion <- (1/mean((background.mu)/base.mu))*(dispersion)
+  
+  addBackground_new(input_controls, sizes = sizes, width = 1000,
+                    back.mu.min = background.mu[1],
+                    back.mu.max = background.mu[2],
+                    back.added.min = 0,
+                    back.added.max = 0,
+                    rlen = 10, 
+                    dispersion.base = bdispersion,
+                    dispersion.added = bdispersion,
+                    more.background.cond = more.background.cond,
+                    prior.df = prior.df, append = TRUE)
+  
+  # now we add background to experimental conditions
+  if (constant.background) {
     
     more.background.cond <- FALSE 
     
@@ -196,14 +224,14 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
                       more.background.cond = more.background.cond,
                       prior.df = prior.df, append = TRUE)
     
-  }else{
+  } else {
     
-  ## one possibility is randomly choosing which sample has more background binding
-  ## do so, we use the following code:  
+    ## one possibility is randomly choosing which sample has more background binding
+    ## do so, we use the following code:  
     
     more.background.cond <- sample(c("A", "B"), 1)
     
-  ## to hold constant, like we had in earlier versions of code set:
+    ## to hold constant, like we had in earlier versions of code, we can do:
     
     #more.background.cond <- "B"
     
@@ -226,9 +254,9 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   }
   
   ####################################CONVERTING TO .BAM FILES#####################################
-  
-  bam.files <- xscss::crunch2BAM(fnames, dir = paste0("./sim_folder_", it,"_do_",prop.do,"/"))
-  unlink(fnames)
+  sam.files <- c(fnames, input_controls)
+  bam.files <- xscss::crunch2BAM(sam.files, dir = paste0("./sim_folder_", it,"_do_",prop.do,"/"))
+  unlink(sam.files)
   
   lfile <- paste0("./sim_folder_",it,"_do_",prop.do,"/tf_log_sim_",it,"_do_",prop.do,".txt")
   
@@ -245,6 +273,16 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
                                        log2FC=fc_vec[up.B],
                                        more.background.cond = more.background.cond),
                 row.names=FALSE, sep="\t",  quote=FALSE, append=TRUE, col.names=FALSE)
+    
+    lfile2 <- paste0("./sim_folder_",it,"_do_",prop.do,"/tf_log_sim_",it,"_do_",prop.do,"_true_peaks.txt")
+    
+    write.table(file=lfile2, data.frame(Chr= chrs,
+                                       Start = pos.1-radius,
+                                       End = pos.1+radius,
+                                       log2FC = fc_vec, 
+                                       more.background.cond = more.background.cond),
+                row.names=FALSE, sep="\t", quote=FALSE)
+    
   
   ####################################PEAK CALLING WITH MACS2#####################################
   
@@ -254,15 +292,20 @@ simulate_reads_proportions <- function(iters, prop.do = 0.05, symmetry = TRUE,
   ####################################CLEAN UP###################################################
   
   narrowpeaks_files <- vector(length = length(grouping)) 
+  summit_files <- vector(length = length(grouping)) 
   
   for (i in 1:length(grouping)){
-    narrowpeaks_files[i] <- list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],".bam_macs_peak/"), pattern = "*.narrowPeak")
-    file.copy(from =paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],".bam_macs_peak/", narrowpeaks_files[i]),
+    narrowpeaks_files[i] <- list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],"_macs_peak/"), pattern = "*.narrowPeak")
+    summit_files[i] <- list.files(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],"_macs_peak/"), pattern = "*bed")
+    
+    file.copy(from = paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],"_macs_peak/", narrowpeaks_files[i]),
               to = paste0("./sim_folder_",it,"_do_",prop.do, "/"))
     
-# to save memory, we delete the macs2 peak folders after extracting the .narrowPeak files we need
+    file.copy(from = paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],"_macs_peak/", summit_files[i]),
+              to = paste0("./sim_folder_",it,"_do_",prop.do, "/"))
     
-    unlink(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],".bam_macs_peak/"), recursive = TRUE) 
+    # to conserve memory, we delete the macs2 peak folders after extracting the .narrowPeak files we need for downstream analysis
+    unlink(paste0("./sim_folder_",it,"_do_",prop.do,"/tf_out_",i,"_sim_",it,"_do_",prop.do,"_cond",grouping[i],"_macs_peak/"), recursive = TRUE) 
     
   }
   

@@ -2,7 +2,7 @@
 #SBATCH --cpus-per-task=128
 #SBATCH --mem=500G
 #SBATCH --time=2-00:15:00     # 2 days and 15 minutes
-##SBATCH --mail-user=email@address.com
+##SBATCH --mail-user=scolando@andrew.cmu.edu.edu
 #SBATCH --mail-type=ALL
 #SBATCH --job-name="chipseq"
 #SBATCH -p amd # This is the default partition

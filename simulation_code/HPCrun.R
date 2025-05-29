@@ -21,7 +21,7 @@ source("big_function.R")
 
 equal.lib.size <- TRUE
 prior.df <- 10
-replicates <- 4
+replicates <- 3
 prop.consensus <- 0.75
 fraglen <- 100
 npeaks <- 10000
