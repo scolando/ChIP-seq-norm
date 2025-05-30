@@ -139,7 +139,7 @@ means_symmF_backF_DNAF <- simulate_means(prop.do = 0.05, symmetry = FALSE,
 
 # Toy Examples in Paper
 
-## Symmetric, constant background, same DNA occupancy
+## Balanced, constant background, same DNA occupancy
 
 ```{r}
 # seed setting for simulations
@@ -190,7 +190,7 @@ ggsave('./pdf_outputs/TTT_means.pdf', width = 8.5, height = 4)
 ```
 
 
-## Symmetric, constant background, different DNA occupancy
+## Balanced, constant background, different DNA occupancy
 
 ```{r}
 means_symmT_backT_DNAF$mu |>
@@ -233,7 +233,7 @@ ggsave('./pdf_outputs/TTF_means.pdf', width = 8.5, height = 4)
 ```
 
 
-## Asymmetric, same DNA binding, constant background
+## Unbalanced, same DNA binding, constant background
 
 ```{r}
 x_location <- x19_location[-c(1,3)]
@@ -262,7 +262,7 @@ means_symmF_backT_DNAT$mu |>
   ggplot(aes(x = x_location, fill = Truth)) +
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
   facet_grid(group ~ ., scales = 'fixed') + 
-  labs(x = 'Genome Location', y = 'DNA Binding', title = 'Asymmetric Differential Occupancy') + 
+  labs(x = 'Genome Location', y = 'DNA Binding', title = 'Unbalanced Differential Occupancy') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
   theme_classic() + 
@@ -278,7 +278,7 @@ means_symmF_backT_DNAT$mu |>
 ggsave('./pdf_outputs/FTT_means.pdf', width = 8.5, height = 4)
 ```
 
-## Symmetric, same DNA binding, different background
+## Balanced, same DNA binding, different background
 
 ```{r}
 means_symmT_backF_DNAT$mu |>
@@ -371,7 +371,7 @@ ggsave('./pdf_outputs/spikein.pdf', width = 8.5, height = 4)
 
 # Extra Toy Examples 
 
-## Asymmetric, different DNA binding, constant background
+## Unbalanced, different DNA binding, constant background
 
 ```{r}
 means_symmF_backT_DNAF$mu |>
@@ -398,7 +398,7 @@ means_symmF_backT_DNAF$mu |>
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
   facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
-       title = 'Asymmetric, different DNA-protein binding / cell, \nconstant background') + 
+       title = 'Unbalanced, different DNA-protein binding / cell, \nconstant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
   theme_classic() + 
@@ -414,7 +414,7 @@ means_symmF_backT_DNAF$mu |>
 ggsave('./pdf_outputs/FTF_means.pdf', width = 8.5, height = 4)
 ```
 
-## Asymmetric, same DNA binding, different background
+## Unbalanced, same DNA binding, different background
 
 ```{r}
 means_symmF_backF_DNAT$mu |>
@@ -441,7 +441,7 @@ means_symmF_backF_DNAT$mu |>
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
   facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
-       title = 'Asymmetric, same DNA-protein binding / cell, \nnon-constant background') + 
+       title = 'Unbalanced, same DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
   theme_classic() + 
@@ -457,7 +457,7 @@ means_symmF_backF_DNAT$mu |>
 ggsave('./pdf_outputs/FFT_means.pdf', width = 8.5, height = 4)
 ```
 
-## Symmetric, different DNA binding, different background
+## Balanced, different DNA binding, different background
 
 ```{r}
 means_symmT_backF_DNAF$mu |>
@@ -484,7 +484,7 @@ means_symmT_backF_DNAF$mu |>
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
   facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
-       title = 'Symmetric, different DNA-protein binding / cell, \nnon-constant background') + 
+       title = 'Balanced, different DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
   theme_classic() + 
@@ -500,7 +500,7 @@ means_symmT_backF_DNAF$mu |>
 ggsave('./pdf_outputs/TFF_means.pdf', width = 8.5, height = 4)
 ```
 
-## Asymmetric, different DNA binding, different background
+## Unbalanced, different DNA binding, different background
 
 ```{r}
 means_symmF_backF_DNAF$mu |>
@@ -527,7 +527,7 @@ means_symmF_backF_DNAF$mu |>
   stat_density(aes(y = 80*after_stat(count)), bw = 80) + 
   facet_grid(group ~ ., scales = 'fixed') + 
   labs(x = 'Genome Location', y = 'DNA Binding',
-       title = 'Asymmetric, different DNA-protein binding / cell, \nnon-constant background') + 
+       title = 'Unbalanced, different DNA-protein binding / cell, \nnon-constant background') + 
   grafify::scale_fill_grafify(ColSeq = FALSE, reverse = TRUE) +
   scale_x_continuous(expand = c(0.01,0, 0, 0))+
   theme_classic() + 

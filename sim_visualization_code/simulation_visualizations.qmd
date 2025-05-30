@@ -51,10 +51,11 @@ data_2_rep <- TTT_2_rep |>
     technique == "TMM_BINS" ~ "TMM (Background Bins)",
     technique == "TMM_PEAKS" ~ "TMM (Reads in Peaks)",
     technique == "DBA_NORM_OFFSETS_ADJUST" ~ "Loess Adjusted Fit (Reads in Peaks)",
+    technique == "MAnorm2" ~ "MAnorm2 (Common Peaks)",
     TRUE ~ technique
   )) |>
   mutate(technique = fct_relevel(technique, "Loess Adjusted Fit (Reads in Peaks)", after = 8),
-         technique = fct_relevel(technique, "MAnorm2", after = 8),
+         technique = fct_relevel(technique, "MAnorm2 (Common Peaks)", after = 8),
          technique = fct_relevel(technique, "Oracle"),
          symm = if_else(symmetry == TRUE, "Balanced",
                         "Unbalanced"),
@@ -74,10 +75,11 @@ data_3_rep <- TTT_3_rep |>
     technique == "TMM_BINS" ~ "TMM (Background Bins)",
     technique == "TMM_PEAKS" ~ "TMM (Reads in Peaks)",
     technique == "DBA_NORM_OFFSETS_ADJUST" ~ "Loess Adjusted Fit (Reads in Peaks)",
+    technique == "MAnorm2" ~ "MAnorm2 (Common Peaks)",
     TRUE ~ technique
   )) |>
   mutate(technique = fct_relevel(technique, "Loess Adjusted Fit (Reads in Peaks)", after = 8),
-         technique = fct_relevel(technique, "MAnorm2", after = 8),
+         technique = fct_relevel(technique, "MAnorm2 (Common Peaks)", after = 8),
          technique = fct_relevel(technique, "Oracle"),
          symm = if_else(symmetry == TRUE, "Balanced",
                         "Unbalanced"),
@@ -163,13 +165,14 @@ ggsave("../visualization_outputs/all_FDR_3_rep.pdf", bg = "white", dpi = 1500, w
 ```{r all power -- 2 rep}
 data_2_rep  |>
   group_by(prop.do, technique, symm, dna, back, FDR.threshold) |>
-  summarize(avg_FDR = mean(FDR, na.rm = TRUE)) |>
-  ggplot(aes(x = prop.do, y = avg_FDR))+
-  geom_hline(aes(yintercept = FDR.threshold), linetype = "dashed")+
+  summarize(avg_power = mean(true_positives/(true_positives + false_negatives),
+                             na.rm = TRUE)) |>
+  ggplot(aes(x = prop.do, y = avg_power))+
+  geom_hline(yintercept = 1, linetype = "dashed")+
   geom_point(aes(color = technique, shape = technique), size = 1.5)+
   geom_line(aes(color = technique, linetype = technique), size = .8)+
   xlab("Proportion of Peaks with Differential DNA Occupancy")+
-  ylab("Average False Discovery Rate")+
+  ylab("Average Power")+
   facet_grid(back ~ symm + dna)+
   grafify::scale_color_grafify(ColSeq = FALSE, reverse = TRUE)+
   scale_shape_manual(values = shape_palette) +
@@ -194,7 +197,6 @@ ggsave("../visualization_outputs/all_power_2_rep.pdf", bg = "white", dpi = 2000,
 
 ```{r all power -- 3 rep}
 data_3_rep |>
-  filter(technique != 'MAnorm2') |>
   group_by(prop.do, technique, symm, dna, back) |>
   summarize(avg_power = mean(true_positives/(true_positives + false_negatives),
                              na.rm = TRUE)) |>
